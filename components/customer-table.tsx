@@ -13,9 +13,10 @@ import { cn } from "@/lib/utils"
 
 interface CustomerTableProps {
   searchQuery: string
+  downloadButtonProps?: React.HTMLAttributes<HTMLButtonElement>
 }
 
-export function CustomerTable({ searchQuery }: CustomerTableProps) {
+export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTableProps) {
   const customers = useCRMStore((state) => state.customers)
   const interactions = useCRMStore((state) => state.interactions)
   const tasks = useCRMStore((state) => state.tasks)
@@ -145,6 +146,7 @@ export function CustomerTable({ searchQuery }: CustomerTableProps) {
             size="sm"
             onClick={handleDownload}
             className="flex items-center gap-2"
+            {...downloadButtonProps}
           >
             <Download className="h-4 w-4" />
             Download {filteredCustomers.length} results

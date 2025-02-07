@@ -83,10 +83,17 @@ export function CustomerDashboard() {
     return () => clearInterval(interval)
   }, [fetchCustomers])
 
-  // Add click outside handler
+  // Update click outside handler
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement
+      
+      // Don't reset if clicking download button or its children
+      if (target.closest('[data-download-button]')) {
+        return
+      }
+
+      if (searchInputRef.current && !searchInputRef.current.contains(target)) {
         setSearchQuery("")
       }
     }
@@ -233,7 +240,7 @@ export function CustomerDashboard() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-md"
           />
-          <CustomerTable searchQuery={searchQuery} />
+          <CustomerTable searchQuery={searchQuery} downloadButtonProps={{ "data-download-button": true }} />
         </div>
       </div>
 
