@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Users, UserPlus, Activity, Flame } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,11 +16,22 @@ export function CustomerDashboard() {
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
   const [showHotLeads, setShowHotLeads] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const { customers, fetchCustomers } = useCRMStore()
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const { 
+    customers, 
+    fetchCustomers,
+    fetchAllInteractions,
+    fetchAllTasks,
+    fetchAllTags 
+  } = useCRMStore()
 
   useEffect(() => {
+    // Fetch all data when component mounts
     fetchCustomers()
-  }, [fetchCustomers])
+    fetchAllInteractions()
+    fetchAllTasks()
+    fetchAllTags()
+  }, [fetchCustomers, fetchAllInteractions, fetchAllTasks, fetchAllTags])
 
   const totalCustomers = customers.length
   const newLeads = customers.filter((c) => c.status === "lead").length
@@ -45,6 +56,20 @@ export function CustomerDashboard() {
 
     return () => clearInterval(interval)
   }, [fetchCustomers])
+
+  // Add click outside handler
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+        setSearchQuery("")
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   return (
     <div className="p-6 space-y-6">
@@ -114,6 +139,7 @@ export function CustomerDashboard() {
         
         <div className="space-y-4">
           <Input
+            ref={searchInputRef}
             placeholder="Search customers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

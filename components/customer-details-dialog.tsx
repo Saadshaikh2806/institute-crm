@@ -29,6 +29,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
     tags,
     updateCustomerStatus,
     updateLeadScore,
+    updateCustomerDetails,
     addInteraction,
     addTask,
     toggleTaskComplete,
@@ -53,6 +54,14 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
     interestLevel: customer?.interestLevel || 0,
     budgetFit: customer?.budgetFit || 0
   })
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedDetails, setEditedDetails] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    school: '',
+    source: ''
+  })
 
   const currentLeadScore = useMemo(() => {
     return calculateLeadScore(scores.engagement, scores.interestLevel, scores.budgetFit)
@@ -64,6 +73,13 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
         engagement: customer.engagement,
         interestLevel: customer.interestLevel,
         budgetFit: customer.budgetFit
+      })
+      setEditedDetails({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        school: customer.school || '',
+        source: customer.source
       })
     }
   }, [customer])
@@ -179,32 +195,101 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
     }
   }
 
+  const handleSaveDetails = async () => {
+    try {
+      await updateCustomerDetails(customerId, editedDetails)
+      setIsEditing(false)
+      toast.success('Customer details updated successfully')
+    } catch (error) {
+      toast.error('Failed to update customer details')
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl" aria-describedby="customer-details-description">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Customer Details</DialogTitle>
+          <DialogTitle className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <Input
+                  value={editedDetails.name}
+                  onChange={(e) => setEditedDetails(prev => ({ ...prev, name: e.target.value }))}
+                  className="text-xl font-semibold"
+                />
+              ) : (
+                <span className="text-xl font-semibold">{customer?.name}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <>
+                  <Button onClick={handleSaveDetails} variant="default">
+                    Save
+                  </Button>
+                  <Button onClick={() => setIsEditing(false)} variant="outline">
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => setIsEditing(true)} variant="outline">
+                  Edit
+                </Button>
+              )}
+            </div>
+          </DialogTitle>
           <p id="customer-details-description" className="text-sm text-muted-foreground">
             View and manage customer information, interactions, and lead scoring
           </p>
         </DialogHeader>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
-              <div className="space-y-2">
-                <p>
-                  <span className="font-medium">Name:</span> {customer.name}
-                </p>
-                <p>
-                  <span className="font-medium">Email:</span> {customer.email}
-                </p>
-                <p>
-                  <span className="font-medium">Phone:</span> {customer.phone}
-                </p>
-                <p>
-                  <span className="font-medium">Source:</span> {customer.source}
-                </p>
+            <div className="space-y-4">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  {isEditing ? (
+                    <Input
+                      value={editedDetails.email}
+                      onChange={(e) => setEditedDetails(prev => ({ ...prev, email: e.target.value }))}
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-600">{customer?.email}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  {isEditing ? (
+                    <Input
+                      value={editedDetails.phone}
+                      onChange={(e) => setEditedDetails(prev => ({ ...prev, phone: e.target.value }))}
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-600">{customer?.phone}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>School</Label>
+                  {isEditing ? (
+                    <Input
+                      value={editedDetails.school}
+                      onChange={(e) => setEditedDetails(prev => ({ ...prev, school: e.target.value }))}
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-600">{customer?.school || '-'}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Source</Label>
+                  {isEditing ? (
+                    <Input
+                      value={editedDetails.source}
+                      onChange={(e) => setEditedDetails(prev => ({ ...prev, source: e.target.value }))}
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-600">{customer?.source}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div>

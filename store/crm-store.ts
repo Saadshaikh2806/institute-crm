@@ -21,6 +21,19 @@ interface CRMStore {
   fetchInteractions: (customerId: string) => Promise<void>
   fetchTasks: (customerId: string) => Promise<void>
   fetchTags: (customerId: string) => Promise<void>
+  fetchAllInteractions: () => Promise<void>
+  fetchAllTasks: () => Promise<void>
+  fetchAllTags: () => Promise<void>
+  updateCustomerDetails: (
+    id: string,
+    details: {
+      name: string
+      email: string
+      phone: string
+      school?: string
+      source: string
+    }
+  ) => Promise<void>
 }
 
 export const useCRMStore = create<CRMStore>((set, get) => ({
@@ -418,6 +431,109 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
     } catch (error) {
       console.error('Error fetching tags:', error)
       toast.error('Failed to fetch tags')
+    }
+  },
+
+  fetchAllInteractions: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('interactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      set({ 
+        interactions: data.map(interaction => ({
+          id: interaction.id,
+          customerId: interaction.customer_id,
+          type: interaction.type,
+          details: interaction.details,
+          createdAt: new Date(interaction.created_at)
+        }))
+      })
+    } catch (error) {
+      console.error('Error fetching interactions:', error)
+    }
+  },
+
+  fetchAllTasks: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      set({ 
+        tasks: data.map(task => ({
+          id: task.id,
+          customerId: task.customer_id,
+          title: task.title,
+          completed: task.completed,
+          dueDate: new Date(task.due_date)
+        }))
+      })
+    } catch (error) {
+      console.error('Error fetching tasks:', error)
+    }
+  },
+
+  fetchAllTags: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+
+      if (error) throw error
+
+      set({ 
+        tags: data.map(tag => ({
+          id: tag.id,
+          customerId: tag.customer_id,
+          name: tag.name
+        }))
+      })
+    } catch (error) {
+      console.error('Error fetching tags:', error)
+    }
+  },
+
+  updateCustomerDetails: async (id, details) => {
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          name: details.name,
+          email: details.email,
+          phone: details.phone,
+          school: details.school,
+          source: details.source,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+
+      if (error) throw error
+
+      // Update local state
+      set((state) => ({
+        customers: state.customers.map((customer) =>
+          customer.id === id
+            ? {
+                ...customer,
+                ...details,
+                updatedAt: new Date()
+              }
+            : customer
+        ),
+      }))
+
+      toast.success('Customer details updated successfully')
+    } catch (error) {
+      console.error('Error updating customer details:', error)
+      toast.error('Failed to update customer details')
+      throw error
     }
   }
 }))
