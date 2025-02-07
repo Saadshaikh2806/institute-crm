@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCRMStore } from "@/store/crm-store"
 import { toast } from "sonner"
+import * as XLSX from 'xlsx'
 
 interface AddCustomerDialogProps {
   open: boolean
@@ -106,6 +107,53 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     handleFileSelect(file)
   }
 
+  const processFile = async (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      
+      reader.onload = async (e) => {
+        try {
+          let data: any[] = []
+          
+          if (file.type === 'text/csv') {
+            const text = e.target?.result as string
+            const rows = text.split('\n')
+            const headers = rows[0].split(',').map(h => h.trim())
+            
+            data = rows.slice(1).map(row => {
+              const values = row.split(',').map(v => v.trim())
+              return headers.reduce((obj, header, i) => {
+                obj[header.toLowerCase()] = values[i]
+                return obj
+              }, {} as any)
+            })
+          } else {
+            const workbook = XLSX.read(e.target?.result, { type: 'binary' })
+            const sheetName = workbook.SheetNames[0]
+            const worksheet = workbook.Sheets[sheetName]
+            data = XLSX.utils.sheet_to_json(worksheet)
+          }
+          
+          resolve(data.filter(row => 
+            row.name && 
+            row.phone && 
+            Object.values(row).some(v => v)
+          ))
+        } catch (error) {
+          reject(error)
+        }
+      }
+
+      reader.onerror = () => reject(reader.error)
+      
+      if (file.type === 'text/csv') {
+        reader.readAsText(file)
+      } else {
+        reader.readAsBinaryString(file)
+      }
+    })
+  }
+
   const handleFileUpload = async () => {
     if (!selectedFile) {
       toast.error('Please select a file first')
@@ -114,14 +162,63 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
     setIsSubmitting(true)
     try {
-      // Here you would implement the actual file processing
-      // For now, just show a success message
-      toast.success('File upload started')
-      // TODO: Implement file processing logic
+      const processedData = await processFile(selectedFile)
       
+      if (processedData.length === 0) {
+        toast.error('No valid records found in file')
+        return
+      }
+
+      let successCount = 0
+      let errorCount = 0
+
+      // Process each record
+      for (const record of processedData) {
+        try {
+          await addCustomer({
+            name: record.name,
+            email: record.email || '',
+            phone: record.phone,
+            school: record.school || '',
+            source: record.source || 'Other',
+            status: (record.status?.toLowerCase() === 'active' || 
+                    record.status?.toLowerCase() === 'inactive') 
+                    ? record.status.toLowerCase() 
+                    : 'lead',
+            leadScore: 0,
+            engagement: 0,
+            interestLevel: 0,
+            budgetFit: 0
+          })
+          successCount++
+        } catch (error) {
+          console.error('Error adding record:', record, error)
+          errorCount++
+        }
+      }
+
+      // Show results
+      if (successCount > 0) {
+        toast.success(`Successfully added ${successCount} customers`)
+      }
+      if (errorCount > 0) {
+        toast.error(`Failed to add ${errorCount} customers`)
+      }
+
+      // Reset file selection
+      setSelectedFile(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+      
+      // Close dialog if all successful
+      if (errorCount === 0) {
+        onOpenChange(false)
+      }
+
     } catch (error) {
-      console.error('Error uploading file:', error)
-      toast.error('Failed to upload file')
+      console.error('Error processing file:', error)
+      toast.error('Failed to process file')
     } finally {
       setIsSubmitting(false)
     }
