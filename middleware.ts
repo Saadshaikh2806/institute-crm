@@ -16,7 +16,6 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // If no session, redirect to login
   if (!session?.user?.email) {
     const redirectUrl = req.nextUrl.clone()
     redirectUrl.pathname = '/login'
