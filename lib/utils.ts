@@ -14,6 +14,12 @@ export function isHotLead(score: number) {
   return score >= 80
 }
 
+export function isWithinLast30Days(date: Date) {
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  return date >= thirtyDaysAgo
+}
+
 export function downloadCSV(data: any[], filename: string) {
   // Convert customer data to CSV format
   const headers = [

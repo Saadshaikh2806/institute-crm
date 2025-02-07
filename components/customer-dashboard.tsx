@@ -8,7 +8,7 @@ import { CustomerTable } from "@/components/customer-table"
 import { AddCustomerDialog } from "@/components/add-customer-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCRMStore } from "@/store/crm-store"
-import { calculateLeadScore, isHotLead } from "@/lib/utils"
+import { calculateLeadScore, isHotLead, isWithinLast30Days } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { HotLeadsList } from "@/components/hot-leads-list"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
@@ -60,7 +60,9 @@ export function CustomerDashboard() {
   }, [session, supabase])
 
   const totalCustomers = customers.length
-  const newLeads = customers.filter((c) => c.status === "lead").length
+  const newLeads = customers.filter((c) => 
+    c.status === "lead" && isWithinLast30Days(c.createdAt)
+  ).length
   const activeCustomers = customers.filter((c) => c.status === "active").length
   
   // Update hot leads calculation
@@ -188,7 +190,7 @@ export function CustomerDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Leads</CardTitle>
+            <CardTitle className="text-sm font-medium">New Leads (30d)</CardTitle>
             <UserPlus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -240,7 +242,10 @@ export function CustomerDashboard() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-md"
           />
-          <CustomerTable searchQuery={searchQuery} downloadButtonProps={{ "data-download-button": true }} />
+          <CustomerTable 
+            searchQuery={searchQuery} 
+            downloadButtonProps={{ "data-download-button": true } as const} 
+          />
         </div>
       </div>
 

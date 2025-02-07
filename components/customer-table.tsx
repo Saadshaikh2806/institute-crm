@@ -13,7 +13,9 @@ import { cn } from "@/lib/utils"
 
 interface CustomerTableProps {
   searchQuery: string
-  downloadButtonProps?: React.HTMLAttributes<HTMLButtonElement>
+  downloadButtonProps?: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    'data-download-button'?: boolean
+  }
 }
 
 export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTableProps) {
