@@ -30,7 +30,7 @@ export function LoginForm() {
     }
   }, [])
 
-  // Update countdown timer every second
+
   useEffect(() => {
     if (countdown <= 0) return
 
