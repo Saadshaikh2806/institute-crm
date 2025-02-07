@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -30,6 +30,9 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     interestLevel: 0,
     budgetFit: 0,
   })
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,6 +67,64 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleFileSelect = (file: File) => {
+    if (!file) return
+    
+    // Validate file type
+    const validTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a CSV or Excel file')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB')
+      return
+    }
+
+    setSelectedFile(file)
+    toast.success('File selected: ' + file.name)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    handleFileSelect(file)
+  }
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) {
+      toast.error('Please select a file first')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // Here you would implement the actual file processing
+      // For now, just show a success message
+      toast.success('File upload started')
+      // TODO: Implement file processing logic
+      
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast.error('Failed to upload file')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -189,7 +250,23 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   Download Sample CSV
                 </Button>
               </div>
-              <div className="rounded-lg border border-dashed p-8 text-center">
+              <div
+                className={`rounded-lg border border-dashed p-8 text-center transition-colors ${
+                  isDragging ? 'border-primary bg-primary/10' : ''
+                } ${selectedFile ? 'border-green-500 bg-green-50' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                style={{ cursor: 'pointer' }}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                  accept=".csv,.xlsx"
+                  className="hidden"
+                />
                 <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
                     <svg
@@ -207,11 +284,23 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                       <line x1="12" x2="12" y1="3" y2="15" />
                     </svg>
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold">Upload CSV/Excel</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">Drag and drop your file here, or click to browse</p>
+                  <h3 className="mt-4 text-lg font-semibold">
+                    {selectedFile ? selectedFile.name : 'Upload CSV/Excel'}
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {selectedFile
+                      ? 'File selected - Click upload to process'
+                      : 'Drag and drop your file here, or click to browse'}
+                  </p>
                 </div>
               </div>
-              <Button className="w-full">Upload and Import</Button>
+              <Button 
+                className="w-full" 
+                onClick={handleFileUpload}
+                disabled={!selectedFile || isSubmitting}
+              >
+                {isSubmitting ? 'Processing...' : 'Upload and Import'}
+              </Button>
               <p className="text-xs text-muted-foreground text-center">
                 Supported formats: CSV, Excel (.xlsx)
                 <br />
