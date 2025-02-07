@@ -22,7 +22,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // For admin routes, check if user is admin
+  
   if (req.nextUrl.pathname.startsWith('/admin')) {
     const { data: user } = await supabase
       .from('crm_users')
