@@ -10,5 +10,9 @@ CREATE TABLE crm_users (
 );
 
 -- Create initial admin user (replace with your email)
-INSERT INTO crm_users (email, role) 
-VALUES ('admin@example.com', 'admin'); 
+INSERT INTO crm_users (email, role, is_active) 
+VALUES ('your-admin-email@example.com', 'admin', true);
+
+-- Create a test user (optional)
+INSERT INTO crm_users (email, role, is_active) 
+VALUES ('test-user@example.com', 'user', true); 

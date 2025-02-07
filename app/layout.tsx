@@ -3,10 +3,11 @@ import './globals.css'
 import { headers, cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { AuthProvider } from '@/components/auth/auth-provider'
+import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'ADCI CRM',
+  description: 'Institute CRM System',
 }
 
 export default async function RootLayout({
@@ -25,6 +26,7 @@ export default async function RootLayout({
       <body>
         <AuthProvider initialSession={session}>
           {children}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

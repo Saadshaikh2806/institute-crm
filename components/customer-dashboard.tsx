@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { Users, UserPlus, Activity, Flame } from "lucide-react"
+import { Users, UserPlus, Activity, Flame, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CustomerTable } from "@/components/customer-table"
@@ -11,6 +11,11 @@ import { useCRMStore } from "@/store/crm-store"
 import { calculateLeadScore, isHotLead } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { HotLeadsList } from "@/components/hot-leads-list"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { useAuth } from "@/components/auth/auth-provider"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export function CustomerDashboard() {
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
@@ -24,6 +29,11 @@ export function CustomerDashboard() {
     fetchAllTasks,
     fetchAllTags 
   } = useCRMStore()
+  const supabase = createClientComponentClient()
+  const { session } = useAuth()
+  const [isAdmin, setIsAdmin] = useState(false)
+  const router = useRouter()
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   useEffect(() => {
     // Fetch all data when component mounts
@@ -32,6 +42,22 @@ export function CustomerDashboard() {
     fetchAllTasks()
     fetchAllTags()
   }, [fetchCustomers, fetchAllInteractions, fetchAllTasks, fetchAllTags])
+
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (!session?.user?.email) return
+      
+      const { data } = await supabase
+        .from('crm_users')
+        .select('role')
+        .eq('email', session.user.email)
+        .single()
+        
+      setIsAdmin(data?.role === 'admin')
+    }
+    
+    checkAdminStatus()
+  }, [session, supabase])
 
   const totalCustomers = customers.length
   const newLeads = customers.filter((c) => c.status === "lead").length
@@ -71,14 +97,50 @@ export function CustomerDashboard() {
     }
   }, [])
 
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      
+      router.push('/login')
+      toast.success("Signed out successfully")
+    } catch (error) {
+      console.error('Error signing out:', error)
+      toast.error("Error signing out")
+      setIsSigningOut(false)
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">ADCI CRM</h1>
-        <Button onClick={() => setIsAddCustomerOpen(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Add Customer
-        </Button>
+        <div className="flex gap-4">
+          {isAdmin && (
+            <Link href="/admin">
+              <Button variant="outline">
+                Admin Panel
+              </Button>
+            </Link>
+          )}
+          <Button onClick={() => setIsAddCustomerOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Add Customer
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+          >
+            {isSigningOut ? (
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent" />
+            ) : (
+              <LogOut className="mr-2 h-4 w-4" />
+            )}
+            Sign Out
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

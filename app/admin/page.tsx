@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { UserManagement } from "@/components/admin/user-management"
+import { AdminHeader } from "@/components/admin/admin-header"
 
 export const metadata: Metadata = {
   title: "Admin - ADCI CRM",
@@ -8,9 +9,11 @@ export const metadata: Metadata = {
 
 export default function AdminPage() {
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-8">Admin Panel</h1>
-      <UserManagement />
+    <div className="min-h-screen flex flex-col">
+      <AdminHeader />
+      <main className="flex-1 p-6">
+        <UserManagement />
+      </main>
     </div>
   )
 } 
