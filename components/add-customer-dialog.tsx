@@ -17,41 +17,49 @@ interface AddCustomerDialogProps {
 
 export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps) {
   const addCustomer = useCRMStore((state) => state.addCustomer)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     school: "",
     source: "",
-    status: "lead",
+    status: "lead" as const,
     leadScore: 0,
     engagement: 0,
     interestLevel: 0,
     budgetFit: 0,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
     if (!formData.name || !formData.phone) {
       toast.error("Name and phone are required")
       return
     }
 
-    addCustomer(formData)
-    toast.success("Customer added successfully")
-    onOpenChange(false)
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      school: "",
-      source: "",
-      status: "lead",
-      leadScore: 0,
-      engagement: 0,
-      interestLevel: 0,
-      budgetFit: 0,
-    })
+    try {
+      setIsSubmitting(true)
+      await addCustomer(formData)
+      onOpenChange(false)
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        school: "",
+        source: "",
+        status: "lead",
+        leadScore: 0,
+        engagement: 0,
+        interestLevel: 0,
+        budgetFit: 0,
+      })
+    } catch (error) {
+      console.error('Error in form submission:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (field: string, value: string) => {
@@ -120,9 +128,10 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="direct">Direct Contact</SelectItem>
-                    <SelectItem value="referral">Referral</SelectItem>
-                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="Website">Website</SelectItem>
+                    <SelectItem value="Referral">Referral</SelectItem>
+                    <SelectItem value="Social Media">Social Media</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -139,9 +148,14 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full">
-                Add Customer
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Adding...' : 'Add Customer'}
+                </Button>
+              </div>
             </form>
           </TabsContent>
           <TabsContent value="bulk">

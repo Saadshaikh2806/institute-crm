@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -12,11 +12,13 @@ import { Slider } from "@/components/ui/slider"
 import { useCRMStore } from "@/store/crm-store"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import type { Customer } from "@/types/crm"
+import { calculateLeadScore, isHotLead } from "@/lib/utils"
 
 interface CustomerDetailsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  customerId: string | null
+  customerId: string
 }
 
 export function CustomerDetailsDialog({ open, onOpenChange, customerId }: CustomerDetailsDialogProps) {
@@ -29,9 +31,13 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
     updateLeadScore,
     addInteraction,
     addTask,
+    toggleTaskComplete,
     addTag,
     deleteTag,
-    toggleTaskComplete,
+    fetchInteractions,
+    fetchTasks,
+    fetchTags,
+    fetchCustomers
   } = useCRMStore()
 
   const customer = customers.find((c) => c.id === customerId)
@@ -39,84 +45,138 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
   const customerTasks = tasks.filter((t) => t.customerId === customerId)
   const customerTags = tags.filter((t) => t.customerId === customerId)
 
-  const [newTag, setNewTag] = useState("")
+  const [newInteraction, setNewInteraction] = useState({ type: "note", details: "" })
   const [newTask, setNewTask] = useState("")
-  const [interactionType, setInteractionType] = useState("note")
-  const [interactionDetails, setInteractionDetails] = useState("")
+  const [newTag, setNewTag] = useState("")
   const [scores, setScores] = useState({
-    engagement: 0,
-    interestLevel: 0,
-    budgetFit: 0,
+    engagement: customer?.engagement || 0,
+    interestLevel: customer?.interestLevel || 0,
+    budgetFit: customer?.budgetFit || 0
   })
 
-  // Reset scores when customer changes
+  const currentLeadScore = useMemo(() => {
+    return calculateLeadScore(scores.engagement, scores.interestLevel, scores.budgetFit)
+  }, [scores])
+
   useEffect(() => {
     if (customer) {
       setScores({
-        engagement: customer.engagement || 0,
-        interestLevel: customer.interestLevel || 0,
-        budgetFit: customer.budgetFit || 0,
+        engagement: customer.engagement,
+        interestLevel: customer.interestLevel,
+        budgetFit: customer.budgetFit
       })
     }
   }, [customer])
 
+  useEffect(() => {
+    if (open && customerId) {
+      fetchInteractions(customerId)
+      fetchTasks(customerId)
+      fetchTags(customerId)
+    }
+  }, [open, customerId, fetchInteractions, fetchTasks, fetchTags])
+
   if (!customer) return null
 
-  const handleAddTag = () => {
-    if (!newTag.trim()) return
-    addTag({ name: newTag, customerId: customer.id })
-    setNewTag("")
-    toast.success("Tag added successfully")
-  }
-
-  const handleAddTask = () => {
-    if (!newTask.trim()) return
-    addTask({
-      title: newTask,
-      customerId: customer.id,
-      completed: false,
-      dueDate: new Date(),
-    })
-    setNewTask("")
-    toast.success("Task added successfully")
-  }
-
-  const handleAddInteraction = () => {
-    if (!interactionDetails.trim()) return
-    addInteraction({
-      customerId: customer.id,
-      type: interactionType as any,
-      details: interactionDetails,
-    })
-    setInteractionDetails("")
-    toast.success("Interaction added successfully")
-  }
-
-  const handleUpdateScores = () => {
-    if (customerId) {
-      const newScores = {
-        engagement: Number(scores.engagement),
-        interestLevel: Number(scores.interestLevel),
-        budgetFit: Number(scores.budgetFit),
-      }
-
-      // Check if scores have actually changed
-      const hasChanged =
-        customer.engagement !== newScores.engagement ||
-        customer.interestLevel !== newScores.interestLevel ||
-        customer.budgetFit !== newScores.budgetFit
-
-      if (hasChanged) {
-        updateLeadScore(customerId, newScores)
-        toast.success("Lead scores updated successfully")
-      } else {
-        toast.info("No changes to update")
-      }
+  const handleStatusChange = async (status: Customer["status"]) => {
+    try {
+      await updateCustomerStatus(customerId, status)
+    } catch (error) {
+      console.error('Error updating status:', error)
     }
   }
 
-  const calculateAverageScore = () => {
-    return Math.round((scores.engagement + scores.interestLevel + scores.budgetFit) / 3)
+  const handleScoreUpdate = async () => {
+    try {
+      const updatedScores = {
+        engagement: Number(scores.engagement),
+        interestLevel: Number(scores.interestLevel),
+        budgetFit: Number(scores.budgetFit)
+      }
+      
+      await updateLeadScore(customerId, updatedScores)
+      
+      // The fetchCustomers call in updateLeadScore will update all counters
+      // including the hot leads counter in the dashboard
+    } catch (error) {
+      console.error('Error updating scores:', error)
+      toast.error('Failed to update scores')
+    }
+  }
+
+  const handleAddInteraction = async () => {
+    if (!newInteraction.details.trim()) {
+      toast.error("Interaction details are required")
+      return
+    }
+
+    try {
+      await addInteraction({
+        customerId,
+        type: newInteraction.type,
+        details: newInteraction.details
+      })
+      setNewInteraction({ type: "note", details: "" })
+      await fetchInteractions(customerId)
+    } catch (error) {
+      console.error('Error adding interaction:', error)
+    }
+  }
+
+  const handleAddTask = async () => {
+    if (!newTask.trim()) {
+      toast.error("Task title is required")
+      return
+    }
+
+    try {
+      await addTask({
+        customerId,
+        title: newTask,
+        completed: false,
+        dueDate: new Date()
+      })
+      setNewTask("")
+      await fetchTasks(customerId)
+    } catch (error) {
+      console.error('Error adding task:', error)
+    }
+  }
+
+  const handleAddTag = async () => {
+    if (!newTag.trim()) {
+      toast.error("Tag name is required")
+      return
+    }
+
+    try {
+      await addTag({
+        customerId,
+        name: newTag
+      })
+      setNewTag("")
+      await fetchTags(customerId)
+    } catch (error) {
+      console.error('Error adding tag:', error)
+    }
+  }
+
+  const handleDeleteTag = async (tagId: string) => {
+    try {
+      await deleteTag(tagId)
+      await fetchTags(customerId)
+    } catch (error) {
+      console.error('Error deleting tag:', error)
+    }
+  }
+
+  const handleToggleTask = async (taskId: string) => {
+    try {
+      await toggleTaskComplete(taskId)
+      await fetchTasks(customerId)
+    } catch (error) {
+      console.error('Error toggling task:', error)
+    }
   }
 
   return (
@@ -156,7 +216,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                     className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm flex items-center gap-1"
                   >
                     {tag.name}
-                    <button onClick={() => deleteTag(tag.id)} className="hover:text-destructive">
+                    <button onClick={() => handleDeleteTag(tag.id)} className="hover:text-destructive">
                       <X className="h-3 w-3" />
                     </button>
                   </span>
@@ -167,20 +227,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                   placeholder="Add tag..."
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
                 />
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    if (newTag.trim()) {
-                      addTag({ name: newTag, customerId: customer.id })
-                      setNewTag("")
-                      toast.success("Tag added successfully")
-                    }
-                  }}
-                >
-                  Add
-                </Button>
+                <Button onClick={handleAddTag}>Add</Button>
               </div>
             </div>
             <div>
@@ -188,7 +236,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
               <div className="flex gap-2">
                 <Select
                   value={customer.status}
-                  onValueChange={(value) => updateCustomerStatus(customer.id, value as any)}
+                  onValueChange={handleStatusChange}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -202,7 +250,14 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Lead Score: {calculateAverageScore()}%</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="text-lg font-semibold">Lead Score: {currentLeadScore}%</h3>
+                {isHotLead(currentLeadScore) && (
+                  <span className="bg-orange-100 text-orange-600 text-xs px-2 py-1 rounded-full font-medium">
+                    Hot Lead 🔥
+                  </span>
+                )}
+              </div>
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label>Engagement ({scores.engagement}%)</Label>
@@ -231,7 +286,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                     step={1}
                   />
                 </div>
-                <Button className="w-full" onClick={handleUpdateScores} variant="default">
+                <Button className="w-full" onClick={handleScoreUpdate} variant="default">
                   Update Score
                 </Button>
               </div>
@@ -241,7 +296,10 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
             <div>
               <h3 className="text-lg font-semibold mb-4">Add Interaction</h3>
               <div className="space-y-4">
-                <Select value={interactionType} onValueChange={setInteractionType}>
+                <Select
+                  value={newInteraction.type}
+                  onValueChange={(value) => setNewInteraction(prev => ({ ...prev, type: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -254,22 +312,12 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                 </Select>
                 <Textarea
                   placeholder="Enter interaction details..."
-                  value={interactionDetails}
-                  onChange={(e) => setInteractionDetails(e.target.value)}
+                  value={newInteraction.details}
+                  onChange={(e) => setNewInteraction(prev => ({ ...prev, details: e.target.value }))}
                 />
                 <Button
                   className="w-full"
-                  onClick={() => {
-                    if (interactionDetails.trim()) {
-                      addInteraction({
-                        customerId: customer.id,
-                        type: interactionType as any,
-                        details: interactionDetails,
-                      })
-                      setInteractionDetails("")
-                      toast.success("Interaction added successfully")
-                    }
-                  }}
+                  onClick={handleAddInteraction}
                 >
                   Add Interaction
                 </Button>
@@ -303,36 +351,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                     placeholder="New task..."
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter" && newTask.trim()) {
-                        addTask({
-                          title: newTask,
-                          customerId: customer.id,
-                          completed: false,
-                          dueDate: new Date(),
-                        })
-                        setNewTask("")
-                        toast.success("Task added successfully")
-                      }
-                    }}
                   />
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (newTask.trim()) {
-                        addTask({
-                          title: newTask,
-                          customerId: customer.id,
-                          completed: false,
-                          dueDate: new Date(),
-                        })
-                        setNewTask("")
-                        toast.success("Task added successfully")
-                      }
-                    }}
-                  >
-                    Add
-                  </Button>
+                  <Button onClick={handleAddTask}>Add</Button>
                 </div>
               </div>
               {customerTasks.length === 0 ? (
@@ -344,7 +364,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                       <input
                         type="checkbox"
                         checked={task.completed}
-                        onChange={() => toggleTaskComplete(task.id)}
+                        onChange={() => handleToggleTask(task.id)}
                         className="h-4 w-4"
                       />
                       <span className={task.completed ? "line-through" : ""}>{task.title}</span>
