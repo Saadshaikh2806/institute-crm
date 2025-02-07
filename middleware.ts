@@ -32,9 +32,10 @@ export async function middleware(req: NextRequest) {
       .single()
 
     if (!user || user.role !== 'admin') {
-      // Redirect non-admin users to dashboard
+      // Redirect non-admin users to login
       const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = '/'
+      redirectUrl.pathname = '/login'
+      redirectUrl.searchParams.set('error', 'admin_required')
       return NextResponse.redirect(redirectUrl)
     }
   }

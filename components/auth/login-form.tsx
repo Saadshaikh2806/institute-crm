@@ -71,6 +71,8 @@ export function LoginForm() {
     toast.error("Invalid login link. Please try again.")
   } else if (error === 'invalid_token') {
     toast.error("Invalid authentication token. Please try logging in again.")
+  } else if (error === 'admin_required') {
+    toast.error("You need administrator access for this area. Please login with an admin account.")
   }
 
   const onSubmit = async (e: React.FormEvent) => {
