@@ -160,6 +160,35 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
           </TabsContent>
           <TabsContent value="bulk">
             <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button 
+                  variant="link" 
+                  onClick={() => {
+                    const sampleData = [
+                      ['Name', 'Email', 'Phone', 'School', 'Source', 'Status'],
+                      ['John Doe', 'john@example.com', '1234567890', 'ABC School', 'Website', 'lead'],
+                      ['Jane Smith', 'jane@example.com', '0987654321', 'XYZ School', 'Referral', 'lead']
+                    ]
+                    
+                    const csvContent = sampleData
+                      .map(row => row.join(','))
+                      .join('\n')
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv' })
+                    const url = window.URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = 'sample_customers.csv'
+                    document.body.appendChild(a)
+                    a.click()
+                    document.body.removeChild(a)
+                    window.URL.revokeObjectURL(url)
+                  }}
+                  className="text-sm"
+                >
+                  Download Sample CSV
+                </Button>
+              </div>
               <div className="rounded-lg border border-dashed p-8 text-center">
                 <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
@@ -183,6 +212,11 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                 </div>
               </div>
               <Button className="w-full">Upload and Import</Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Supported formats: CSV, Excel (.xlsx)
+                <br />
+                Maximum file size: 5MB
+              </p>
             </div>
           </TabsContent>
         </Tabs>

@@ -46,7 +46,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
   const customerTasks = tasks.filter((t) => t.customerId === customerId)
   const customerTags = tags.filter((t) => t.customerId === customerId)
 
-  const [newInteraction, setNewInteraction] = useState({ type: "note", details: "" })
+  const [newInteraction, setNewInteraction] = useState<{ type: "note" | "call" | "email" | "meeting", details: string }>({ type: "note", details: "" })
   const [newTask, setNewTask] = useState("")
   const [newTag, setNewTag] = useState("")
   const [scores, setScores] = useState({
@@ -383,7 +383,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
               <div className="space-y-4">
                 <Select
                   value={newInteraction.type}
-                  onValueChange={(value) => setNewInteraction(prev => ({ ...prev, type: value }))}
+                  onValueChange={(value: "note" | "call" | "email" | "meeting") => setNewInteraction(prev => ({ ...prev, type: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
