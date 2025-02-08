@@ -109,32 +109,14 @@ export function CustomerDashboard() {
   const handleSignOut = async () => {
     setIsSigningOut(true)
     try {
-      // First clear any local session data
-      const { error: signOutError } = await supabase.auth.signOut()
-      if (signOutError) {
-        console.error('Error in signOut:', signOutError)
-      }
-
-      // Force clear the session from localStorage
-      window.localStorage.removeItem('supabase.auth.token')
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
       
-      // Clear any session cookies
-      const response = await fetch('/api/auth/signout', {
-        method: 'POST',
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to sign out')
-      }
-
-      // Redirect regardless of errors to ensure user can get back to login
       router.push('/login')
-      router.refresh()
-      
+      toast.success("Signed out successfully")
     } catch (error) {
       console.error('Error signing out:', error)
-    } finally {
+      toast.error("Error signing out")
       setIsSigningOut(false)
     }
   }
