@@ -207,8 +207,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-b from-white to-gray-50/50">
+        <DialogHeader className="space-y-4">
           <DialogTitle className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               {isEditing ? (
@@ -224,27 +224,26 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
             <div className="flex items-center gap-2">
               {isEditing ? (
                 <>
-                  <Button onClick={handleSaveDetails} variant="default">
-                    Save
+                  <Button onClick={handleSaveDetails} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Save Changes
                   </Button>
                   <Button onClick={() => setIsEditing(false)} variant="outline">
                     Cancel
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => setIsEditing(true)} variant="outline">
-                  Edit
+                <Button onClick={() => setIsEditing(true)} variant="outline" className="hover:bg-gray-100">
+                  Edit Details
                 </Button>
               )}
             </div>
           </DialogTitle>
-          <p id="customer-details-description" className="text-sm text-muted-foreground">
-            View and manage customer information, interactions, and lead scoring
-          </p>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
-            <div className="space-y-4">
+            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
+              <h3 className="font-semibold text-lg">Contact Information</h3>
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label>Email</Label>
@@ -292,16 +291,17 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                 </div>
               </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Tags</h3>
-              <div className="flex gap-2 flex-wrap mb-2">
+
+            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
+              <h3 className="font-semibold text-lg">Tags</h3>
+              <div className="flex flex-wrap gap-2">
                 {customerTags.map((tag) => (
                   <span
                     key={tag.id}
-                    className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm flex items-center gap-1"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700"
                   >
                     {tag.name}
-                    <button onClick={() => handleDeleteTag(tag.id)} className="hover:text-destructive">
+                    <button onClick={() => handleDeleteTag(tag.id)} className="hover:text-red-500">
                       <X className="h-3 w-3" />
                     </button>
                   </span>
@@ -312,37 +312,14 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                   placeholder="Add tag..."
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
+                  className="flex-1"
                 />
-                <Button onClick={handleAddTag}>Add</Button>
+                <Button onClick={handleAddTag} size="sm">Add</Button>
               </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Status</h3>
-              <div className="flex gap-2">
-                <Select
-                  value={customer.status}
-                  onValueChange={handleStatusChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="lead">Lead</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-lg font-semibold">Lead Score: {currentLeadScore}%</h3>
-                {isHotLead(currentLeadScore) && (
-                  <span className="bg-orange-100 text-orange-600 text-xs px-2 py-1 rounded-full font-medium">
-                    Hot Lead 🔥
-                  </span>
-                )}
-              </div>
+
+            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
+              <h3 className="font-semibold text-lg">Lead Scoring</h3>
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label>Engagement ({scores.engagement}%)</Label>
@@ -371,15 +348,19 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                     step={1}
                   />
                 </div>
-                <Button className="w-full" onClick={handleScoreUpdate} variant="default">
+                <Button 
+                  onClick={handleScoreUpdate} 
+                  className="w-full bg-gradient-to-r from-blue-500 to-violet-500 text-white hover:opacity-90"
+                >
                   Update Score
                 </Button>
               </div>
             </div>
           </div>
+
           <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Add Interaction</h3>
+            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
+              <h3 className="font-semibold text-lg">Interactions</h3>
               <div className="space-y-4">
                 <Select
                   value={newInteraction.type}
@@ -407,9 +388,6 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                   Add Interaction
                 </Button>
               </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Interaction History</h3>
               {customerInteractions.length === 0 ? (
                 <div className="text-muted-foreground text-center py-8">No interactions recorded yet.</div>
               ) : (
@@ -428,35 +406,40 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                 </div>
               )}
             </div>
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Tasks</h3>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="New task..."
-                    value={newTask}
-                    onChange={(e) => setNewTask(e.target.value)}
-                  />
-                  <Button onClick={handleAddTask}>Add</Button>
-                </div>
-              </div>
-              {customerTasks.length === 0 ? (
-                <div className="text-muted-foreground text-center py-8">No tasks created yet</div>
-              ) : (
-                <div className="space-y-2">
-                  {customerTasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-2 p-2 border rounded">
+
+            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
+              <h3 className="font-semibold text-lg">Tasks</h3>
+              <div className="space-y-2">
+                {customerTasks.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">No tasks yet</p>
+                ) : (
+                  customerTasks.map((task) => (
+                    <div 
+                      key={task.id} 
+                      className="flex items-center gap-2 p-3 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors"
+                    >
                       <input
                         type="checkbox"
                         checked={task.completed}
                         onChange={() => handleToggleTask(task.id)}
-                        className="h-4 w-4"
+                        className="h-4 w-4 rounded border-gray-300"
                       />
-                      <span className={task.completed ? "line-through" : ""}>{task.title}</span>
+                      <span className={task.completed ? "line-through text-gray-500" : "flex-1"}>
+                        {task.title}
+                      </span>
                     </div>
-                  ))}
+                  ))
+                )}
+                <div className="flex gap-2 mt-4">
+                  <Input
+                    placeholder="New task..."
+                    value={newTask}
+                    onChange={(e) => setNewTask(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleAddTask} size="sm">Add</Button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

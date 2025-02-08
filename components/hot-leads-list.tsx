@@ -28,11 +28,11 @@ export function HotLeadsList({ onClose }: HotLeadsListProps) {
   if (hotLeads.length === 0) return null
 
   return (
-    <Card className="relative border-orange-200">
+    <Card className="relative border-orange-200 bg-gradient-to-br from-orange-50 to-white">
       <Button
         variant="ghost"
         size="icon"
-        className="absolute right-4 top-4"
+        className="absolute right-4 top-4 hover:bg-orange-100/50"
         onClick={onClose}
       >
         <X className="h-4 w-4" />
@@ -40,7 +40,9 @@ export function HotLeadsList({ onClose }: HotLeadsListProps) {
       
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Flame className="h-5 w-5 text-orange-500" />
+          <div className="p-2 rounded-full bg-orange-100">
+            <Flame className="h-5 w-5 text-orange-500" />
+          </div>
           <CardTitle>Hot Leads</CardTitle>
         </div>
       </CardHeader>
@@ -54,11 +56,11 @@ export function HotLeadsList({ onClose }: HotLeadsListProps) {
               lead.budgetFit
             )
             return (
-              <Card key={lead.id} className="bg-orange-50 border-orange-100">
+              <Card key={lead.id} className="bg-white border-orange-100 hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-medium flex justify-between items-center">
                     {lead.name}
-                    <span className="text-sm bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
+                    <span className="text-sm bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 rounded-full">
                       {score}%
                     </span>
                   </CardTitle>
@@ -78,6 +80,7 @@ export function HotLeadsList({ onClose }: HotLeadsListProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => setSelectedCustomerId(lead.id)}
+                        className="hover:bg-orange-50"
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View Details
@@ -100,4 +103,4 @@ export function HotLeadsList({ onClose }: HotLeadsListProps) {
       )}
     </Card>
   )
-} 
+}
