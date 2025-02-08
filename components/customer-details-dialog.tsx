@@ -13,7 +13,8 @@ import { useCRMStore } from "@/store/crm-store"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import type { Customer } from "@/types/crm"
-import { calculateLeadScore, isHotLead } from "@/lib/utils"
+import { calculateLeadScore, isHotLead, cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface CustomerDetailsDialogProps {
   open: boolean
@@ -207,238 +208,299 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-b from-white to-gray-50/50">
-        <DialogHeader className="space-y-4">
-          <DialogTitle className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              {isEditing ? (
-                <Input
-                  value={editedDetails.name}
-                  onChange={(e) => setEditedDetails(prev => ({ ...prev, name: e.target.value }))}
-                  className="text-xl font-semibold"
-                />
-              ) : (
-                <span className="text-xl font-semibold">{customer?.name}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {isEditing ? (
-                <>
-                  <Button onClick={handleSaveDetails} className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Save Changes
+      <DialogContent className="max-w-5xl h-auto max-h-[90vh] p-0 bg-gradient-to-b from-white to-gray-50/50">
+        <div className="sticky top-0 z-10 bg-white border-b p-6">
+          <DialogHeader className="space-y-4">
+            <DialogTitle className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <Input
+                    value={editedDetails.name}
+                    onChange={(e) => setEditedDetails(prev => ({ ...prev, name: e.target.value }))}
+                    className="text-xl font-semibold"
+                  />
+                ) : (
+                  <span className="text-xl font-semibold">{customer?.name}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <>
+                    <Button onClick={handleSaveDetails} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      Save Changes
+                    </Button>
+                    <Button onClick={() => setIsEditing(false)} variant="outline">
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={() => setIsEditing(true)} variant="outline" className="hover:bg-gray-100">
+                    Edit Details
                   </Button>
-                  <Button onClick={() => setIsEditing(false)} variant="outline">
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <Button onClick={() => setIsEditing(true)} variant="outline" className="hover:bg-gray-100">
-                  Edit Details
-                </Button>
-              )}
-            </div>
-          </DialogTitle>
-        </DialogHeader>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
-              <h3 className="font-semibold text-lg">Contact Information</h3>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  {isEditing ? (
-                    <Input
-                      value={editedDetails.email}
-                      onChange={(e) => setEditedDetails(prev => ({ ...prev, email: e.target.value }))}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-600">{customer?.email}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Phone</Label>
-                  {isEditing ? (
-                    <Input
-                      value={editedDetails.phone}
-                      onChange={(e) => setEditedDetails(prev => ({ ...prev, phone: e.target.value }))}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-600">{customer?.phone}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>School</Label>
-                  {isEditing ? (
-                    <Input
-                      value={editedDetails.school}
-                      onChange={(e) => setEditedDetails(prev => ({ ...prev, school: e.target.value }))}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-600">{customer?.school || '-'}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Source</Label>
-                  {isEditing ? (
-                    <Input
-                      value={editedDetails.source}
-                      onChange={(e) => setEditedDetails(prev => ({ ...prev, source: e.target.value }))}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-600">{customer?.source}</p>
-                  )}
+        <div className="p-6 overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-4">
+              {/* Contact Info Card */}
+              <div className="p-4 rounded-lg border bg-white shadow-sm space-y-3">
+                <h3 className="font-semibold text-lg">Contact Information</h3>
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    {isEditing ? (
+                      <Input
+                        value={editedDetails.email}
+                        onChange={(e) => setEditedDetails(prev => ({ ...prev, email: e.target.value }))}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">{customer?.email}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Phone</Label>
+                    {isEditing ? (
+                      <Input
+                        value={editedDetails.phone}
+                        onChange={(e) => setEditedDetails(prev => ({ ...prev, phone: e.target.value }))}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">{customer?.phone}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>School</Label>
+                    {isEditing ? (
+                      <Input
+                        value={editedDetails.school}
+                        onChange={(e) => setEditedDetails(prev => ({ ...prev, school: e.target.value }))}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">{customer?.school || '-'}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Source</Label>
+                    {isEditing ? (
+                      <Input
+                        value={editedDetails.source}
+                        onChange={(e) => setEditedDetails(prev => ({ ...prev, source: e.target.value }))}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">{customer?.source}</p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
-              <h3 className="font-semibold text-lg">Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {customerTags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700"
-                  >
-                    {tag.name}
-                    <button onClick={() => handleDeleteTag(tag.id)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add tag..."
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={handleAddTag} size="sm">Add</Button>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
-              <h3 className="font-semibold text-lg">Lead Scoring</h3>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Engagement ({scores.engagement}%)</Label>
-                  <Slider
-                    value={[Number(scores.engagement)]}
-                    onValueChange={([value]) => setScores((prev) => ({ ...prev, engagement: value }))}
-                    max={100}
-                    step={1}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Interest Level ({scores.interestLevel}%)</Label>
-                  <Slider
-                    value={[Number(scores.interestLevel)]}
-                    onValueChange={([value]) => setScores((prev) => ({ ...prev, interestLevel: value }))}
-                    max={100}
-                    step={1}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Budget Fit ({scores.budgetFit}%)</Label>
-                  <Slider
-                    value={[Number(scores.budgetFit)]}
-                    onValueChange={([value]) => setScores((prev) => ({ ...prev, budgetFit: value }))}
-                    max={100}
-                    step={1}
-                  />
-                </div>
-                <Button 
-                  onClick={handleScoreUpdate} 
-                  className="w-full bg-gradient-to-r from-blue-500 to-violet-500 text-white hover:opacity-90"
-                >
-                  Update Score
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
-              <h3 className="font-semibold text-lg">Interactions</h3>
-              <div className="space-y-4">
-                <Select
-                  value={newInteraction.type}
-                  onValueChange={(value: "note" | "call" | "email" | "meeting") => setNewInteraction(prev => ({ ...prev, type: value }))}
-                >
-                  <SelectTrigger>
+              {/* Status Card - New Position */}
+              <div className="p-4 rounded-lg border bg-white shadow-sm space-y-3">
+                <h3 className="font-semibold text-lg">Status</h3>
+                <Select value={customer.status} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="note">Note</SelectItem>
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="meeting">Meeting</SelectItem>
+                    <SelectItem value="lead">Lead</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
-                <Textarea
-                  placeholder="Enter interaction details..."
-                  value={newInteraction.details}
-                  onChange={(e) => setNewInteraction(prev => ({ ...prev, details: e.target.value }))}
-                />
-                <Button
-                  className="w-full"
-                  onClick={handleAddInteraction}
-                >
-                  Add Interaction
-                </Button>
               </div>
-              {customerInteractions.length === 0 ? (
-                <div className="text-muted-foreground text-center py-8">No interactions recorded yet.</div>
-              ) : (
-                <div className="space-y-4">
-                  {customerInteractions.map((interaction) => (
-                    <div key={interaction.id} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="capitalize font-medium">{interaction.type}</span>
-                        <span className="text-muted-foreground">
-                          {format(new Date(interaction.createdAt), "MMM d, yyyy h:mm a")}
-                        </span>
-                      </div>
-                      <p className="text-sm">{interaction.details}</p>
-                    </div>
+
+              {/* Tags Card */}
+              <div className="p-4 rounded-lg border bg-white shadow-sm space-y-3">
+                <h3 className="font-semibold text-lg">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {customerTags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700"
+                    >
+                      {tag.name}
+                      <button onClick={() => handleDeleteTag(tag.id)} className="hover:text-red-500">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
                   ))}
                 </div>
-              )}
-            </div>
-
-            <div className="p-4 rounded-lg border bg-white shadow-sm space-y-4">
-              <h3 className="font-semibold text-lg">Tasks</h3>
-              <div className="space-y-2">
-                {customerTasks.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">No tasks yet</p>
-                ) : (
-                  customerTasks.map((task) => (
-                    <div 
-                      key={task.id} 
-                      className="flex items-center gap-2 p-3 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={task.completed}
-                        onChange={() => handleToggleTask(task.id)}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <span className={task.completed ? "line-through text-gray-500" : "flex-1"}>
-                        {task.title}
-                      </span>
-                    </div>
-                  ))
-                )}
-                <div className="flex gap-2 mt-4">
+                <div className="flex gap-2">
                   <Input
-                    placeholder="New task..."
-                    value={newTask}
-                    onChange={(e) => setNewTask(e.target.value)}
+                    placeholder="Add tag..."
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
                     className="flex-1"
                   />
-                  <Button onClick={handleAddTask} size="sm">Add</Button>
+                  <Button onClick={handleAddTag} size="sm">Add</Button>
                 </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+              {/* Lead Scoring Card */}
+              <div className="p-4 rounded-lg border bg-white shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Lead Scoring</h3>
+                  <span className={cn(
+                    "text-sm px-2 py-1 rounded-full font-medium",
+                    isHotLead(currentLeadScore) 
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-blue-100 text-blue-700"
+                  )}>
+                    Score: {currentLeadScore}%
+                  </span>
+                </div>
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <Label>Engagement</Label>
+                      <span className="text-muted-foreground">{scores.engagement}%</span>
+                    </div>
+                    <Slider
+                      value={[Number(scores.engagement)]}
+                      onValueChange={([value]) => setScores((prev) => ({ ...prev, engagement: value }))}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <Label>Interest Level</Label>
+                      <span className="text-muted-foreground">{scores.interestLevel}%</span>
+                    </div>
+                    <Slider
+                      value={[Number(scores.interestLevel)]}
+                      onValueChange={([value]) => setScores((prev) => ({ ...prev, interestLevel: value }))}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <Label>Budget Fit</Label>
+                      <span className="text-muted-foreground">{scores.budgetFit}%</span>
+                    </div>
+                    <Slider
+                      value={[Number(scores.budgetFit)]}
+                      onValueChange={([value]) => setScores((prev) => ({ ...prev, budgetFit: value }))}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleScoreUpdate} 
+                    className="w-full bg-gradient-to-r from-blue-500 to-violet-500 text-white hover:opacity-90"
+                  >
+                    Update Score
+                  </Button>
+                </div>
+              </div>
+
+              {/* Combined Interactions & Tasks Card */}
+              <div className="p-4 rounded-lg border bg-white shadow-sm">
+                <Tabs defaultValue="interactions" className="w-full">
+                  <TabsList className="w-full grid grid-cols-2 mb-4">
+                    <TabsTrigger value="interactions">Interactions</TabsTrigger>
+                    <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="interactions" className="space-y-4 mt-0">
+                    <div className="space-y-3">
+                      <Select
+                        value={newInteraction.type}
+                        onValueChange={(value: "note" | "call" | "email" | "meeting") => 
+                          setNewInteraction(prev => ({ ...prev, type: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="note">Note</SelectItem>
+                          <SelectItem value="call">Call</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="meeting">Meeting</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Textarea
+                        placeholder="Enter interaction details..."
+                        value={newInteraction.details}
+                        onChange={(e) => setNewInteraction(prev => ({ ...prev, details: e.target.value }))}
+                        className="h-20"
+                      />
+                      <Button className="w-full" onClick={handleAddInteraction}>
+                        Add Interaction
+                      </Button>
+                    </div>
+                    
+                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                      {customerInteractions.length === 0 ? (
+                        <div className="text-muted-foreground text-center py-8">
+                          No interactions recorded yet.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {customerInteractions.map((interaction) => (
+                            <div key={interaction.id} className="border rounded-lg p-3 space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="capitalize font-medium">{interaction.type}</span>
+                                <span className="text-muted-foreground">
+                                  {format(new Date(interaction.createdAt), "MMM d, yyyy h:mm a")}
+                                </span>
+                              </div>
+                              <p className="text-sm">{interaction.details}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="tasks" className="space-y-4 mt-0">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="New task..."
+                        value={newTask}
+                        onChange={(e) => setNewTask(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button onClick={handleAddTask}>Add</Button>
+                    </div>
+                    
+                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                      {customerTasks.length === 0 ? (
+                        <div className="text-muted-foreground text-center py-8">
+                          No tasks yet
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {customerTasks.map((task) => (
+                            <div 
+                              key={task.id} 
+                              className="flex items-center gap-2 p-3 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={task.completed}
+                                onChange={() => handleToggleTask(task.id)}
+                                className="h-4 w-4 rounded border-gray-300"
+                              />
+                              <span className={task.completed ? "line-through text-gray-500" : "flex-1"}>
+                                {task.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           </div>
