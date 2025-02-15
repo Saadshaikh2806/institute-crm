@@ -208,8 +208,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-auto max-h-[90vh] p-0 bg-gradient-to-b from-white to-gray-50/50">
-        <div className="sticky top-0 z-10 bg-white border-b p-6">
+      <DialogContent className="max-w-[95vw] lg:max-w-[85vw] xl:max-w-7xl max-h-[90vh] p-0 bg-gradient-to-b from-white to-gray-50/50 flex flex-col">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 py-4 flex-shrink-0">
           <DialogHeader className="space-y-4">
             <DialogTitle className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -243,12 +243,12 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
           </DialogHeader>
         </div>
 
-        <div className="p-6 overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full">
             {/* Left Column */}
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto">
               {/* Contact Info Card */}
-              <div className="p-4 rounded-lg border bg-white shadow-sm space-y-3">
+              <div className="p-3 sm:p-4 rounded-lg border bg-white shadow-sm space-y-3">
                 <h3 className="font-semibold text-lg">Contact Information</h3>
                 <div className="grid gap-4">
                   <div className="space-y-2">
@@ -298,8 +298,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                 </div>
               </div>
 
-              {/* Status Card - New Position */}
-              <div className="p-4 rounded-lg border bg-white shadow-sm space-y-3">
+              {/* Status Card */}
+              <div className="p-3 sm:p-4 rounded-lg border bg-white shadow-sm space-y-3">
                 <h3 className="font-semibold text-lg">Status</h3>
                 <Select value={customer.status} onValueChange={handleStatusChange}>
                   <SelectTrigger className="w-full">
@@ -314,7 +314,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
               </div>
 
               {/* Tags Card */}
-              <div className="p-4 rounded-lg border bg-white shadow-sm space-y-3">
+              <div className="p-3 sm:p-4 rounded-lg border bg-white shadow-sm space-y-3">
                 <h3 className="font-semibold text-lg">Tags</h3>
                 <div className="flex flex-wrap gap-2">
                   {customerTags.map((tag) => (
@@ -342,9 +342,9 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
             </div>
 
             {/* Right Column */}
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto">
               {/* Lead Scoring Card */}
-              <div className="p-4 rounded-lg border bg-white shadow-sm space-y-3">
+              <div className="p-3 sm:p-4 rounded-lg border bg-white shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">Lead Scoring</h3>
                   <span className={cn(
@@ -404,7 +404,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
               </div>
 
               {/* Combined Interactions & Tasks Card */}
-              <div className="p-4 rounded-lg border bg-white shadow-sm">
+              <div className="p-3 sm:p-4 rounded-lg border bg-white shadow-sm">
                 <Tabs defaultValue="interactions" className="w-full">
                   <TabsList className="w-full grid grid-cols-2 mb-4">
                     <TabsTrigger value="interactions">Interactions</TabsTrigger>
@@ -439,7 +439,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                       </Button>
                     </div>
                     
-                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                    <div className="max-h-[30vh] overflow-y-auto pr-2">
                       {customerInteractions.length === 0 ? (
                         <div className="text-muted-foreground text-center py-8">
                           No interactions recorded yet.
@@ -473,7 +473,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                       <Button onClick={handleAddTask}>Add</Button>
                     </div>
                     
-                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                    <div className="max-h-[30vh] overflow-y-auto pr-2">
                       {customerTasks.length === 0 ? (
                         <div className="text-muted-foreground text-center py-8">
                           No tasks yet
