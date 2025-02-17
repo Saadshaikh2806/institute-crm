@@ -104,6 +104,19 @@ export function CustomerDashboard() {
     return () => clearInterval(interval)
   }, [fetchCustomers])
 
+  // Updated fetch to include user isolation based on the session user id.
+  // Ensure your fetchCustomers function (likely defined in your store) applies a filter:
+  // Example update inside fetchCustomers:
+  // const { data, error } = await supabase
+  //   .from('customers')
+  //   .select('*')
+  //   .eq('user_id', session.user.id)
+  //
+  // ...existing call to fetchCustomers...
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers, session?.user?.id]);
+
   // Update click outside handler
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

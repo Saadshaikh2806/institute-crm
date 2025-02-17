@@ -251,6 +251,11 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
               <div className="p-3 sm:p-4 rounded-lg border bg-white shadow-sm space-y-3">
                 <h3 className="font-semibold text-lg">Contact Information</h3>
                 <div className="grid gap-4">
+                  {/* Add this new field */}
+                  <div className="space-y-2">
+                    <Label>Added By</Label>
+                    <p className="text-sm text-gray-600">{customer?.addedBy}</p>
+                  </div>
                   <div className="space-y-2">
                     <Label>Email</Label>
                     {isEditing ? (
@@ -287,10 +292,21 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                   <div className="space-y-2">
                     <Label>Source</Label>
                     {isEditing ? (
-                      <Input
-                        value={editedDetails.source}
-                        onChange={(e) => setEditedDetails(prev => ({ ...prev, source: e.target.value }))}
-                      />
+                      <Select 
+                        value={editedDetails.source} 
+                        onValueChange={(value) => setEditedDetails(prev => ({ ...prev, source: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select source" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Website">Website</SelectItem>
+                          <SelectItem value="Referral">Referral</SelectItem>
+                          <SelectItem value="Social Media">Social Media</SelectItem>
+                          <SelectItem value="Marketing">Marketing</SelectItem> {/* Add this line */}
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <p className="text-sm text-gray-600">{customer?.source}</p>
                     )}

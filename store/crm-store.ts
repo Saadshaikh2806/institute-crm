@@ -2,6 +2,24 @@ import { create } from "zustand"
 import type { Customer, Interaction, Task, Tag } from "@/types/crm"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+
+const mapCustomerData = (data: any): Customer => ({
+  id: data.id,
+  name: data.name,
+  email: data.email,
+  phone: data.phone,
+  school: data.school,
+  source: data.source,
+  status: data.status,
+  leadScore: data.lead_score || 0,
+  engagement: data.engagement || 0,
+  interestLevel: data.interest_level || 0,
+  budgetFit: data.budget_fit || 0,
+  createdAt: new Date(data.created_at),
+  updatedAt: new Date(data.updated_at),
+  addedBy: data.added_by || 'Unknown'
+})
 
 interface CRMStore {
   customers: Customer[]
@@ -43,7 +61,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   tags: [],
 
   fetchCustomers: async () => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data: customers, error } = await supabase
         .from('customers')
         .select('*')
@@ -52,21 +76,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       if (error) throw error
 
       set({
-        customers: customers.map(customer => ({
-          id: customer.id,
-          name: customer.name,
-          email: customer.email,
-          phone: customer.phone,
-          school: customer.school,
-          source: customer.source,
-          status: customer.status,
-          leadScore: Number(customer.lead_score) || 0,
-          engagement: Number(customer.engagement) || 0,
-          interestLevel: Number(customer.interest_level) || 0,
-          budgetFit: Number(customer.budget_fit) || 0,
-          createdAt: new Date(customer.created_at),
-          updatedAt: new Date(customer.updated_at)
-        }))
+        customers: customers.map(mapCustomerData)
       })
     } catch (error) {
       console.error('Error fetching customers:', error)
@@ -75,65 +85,78 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   addCustomer: async (customerData) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       // Convert camelCase to snake_case for Supabase
       const supabaseData = {
+        user_id: session.user.id, // Explicitly set the user_id
         name: customerData.name,
         email: customerData.email,
         phone: customerData.phone,
         school: customerData.school,
         source: customerData.source,
         status: customerData.status,
-        lead_score: 0,
-        engagement: 0,
-        interest_level: 0,
-        budget_fit: 0,
+        lead_score: customerData.leadScore,
+        engagement: customerData.engagement,
+        interest_level: customerData.interestLevel,
+        budget_fit: customerData.budgetFit,
+        added_by: customerData.addedBy // Use the provided addedBy value
       }
 
       const { data, error } = await supabase
         .from('customers')
         .insert([supabaseData])
         .select()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
       if (data) {
-        // Convert snake_case back to camelCase for the frontend
         const newCustomer: Customer = {
-          id: data[0].id,
-          name: data[0].name,
-          email: data[0].email,
-          phone: data[0].phone,
-          school: data[0].school,
-          source: data[0].source,
-          status: data[0].status,
-          leadScore: data[0].lead_score || 0,
-          engagement: data[0].engagement || 0,
-          interestLevel: data[0].interest_level || 0,
-          budgetFit: data[0].budget_fit || 0,
-          createdAt: new Date(data[0].created_at),
-          updatedAt: new Date(data[0].updated_at),
-        }
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          school: data.school,
+          source: data.source,
+          status: data.status,
+          leadScore: data.lead_score,
+          engagement: data.engagement,
+          interestLevel: data.interest_level,
+          budgetFit: data.budget_fit,
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at),
+          addedBy: data.added_by
+        };
 
         set((state) => ({
           customers: [newCustomer, ...state.customers],
-        }))
-
-        toast.success('Customer added successfully')
+        }));
       }
     } catch (error) {
-      console.error('Error adding customer:', error)
-      toast.error('Failed to add customer')
-      throw error
+      console.error('Error adding customer:', error);
+      throw error;
     }
   },
 
   deleteCustomer: async (id) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { error } = await supabase
         .from('customers')
         .delete()
         .eq('id', id)
+        .eq('user_id', session.user.id) // Extra safety check
 
       if (error) throw error
 
@@ -149,7 +172,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   updateCustomerStatus: async (id, status) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { error } = await supabase
         .from('customers')
         .update({ 
@@ -157,6 +186,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
+        .eq('user_id', session.user.id) // Extra safety check
 
       if (error) throw error
 
@@ -176,7 +206,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   updateLeadScore: async (id, scores) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const calculatedLeadScore = Math.round(
         (Number(scores.engagement) + Number(scores.interestLevel) + Number(scores.budgetFit)) / 3
       );
@@ -193,6 +229,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         .from('customers')
         .update(updateData)
         .eq('id', id)
+        .eq('user_id', session.user.id) // Extra safety check
 
       if (error) throw error
 
@@ -220,7 +257,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   addInteraction: async (interaction) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('interactions')
         .insert([{
@@ -256,7 +299,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   addTask: async (task) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .insert([{
@@ -292,7 +341,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   toggleTaskComplete: async (id) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const task = get().tasks.find(t => t.id === id)
       if (!task) return
 
@@ -300,6 +355,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         .from('tasks')
         .update({ completed: !task.completed })
         .eq('id', id)
+        .eq('user_id', session.user.id) // Extra safety check
 
       if (error) throw error
 
@@ -317,7 +373,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   addTag: async (tag) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('tags')
         .insert([{
@@ -349,11 +411,18 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   deleteTag: async (id) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { error } = await supabase
         .from('tags')
         .delete()
         .eq('id', id)
+        .eq('user_id', session.user.id) // Extra safety check
 
       if (error) throw error
 
@@ -369,7 +438,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   fetchInteractions: async (customerId: string) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('interactions')
         .select('*')
@@ -392,7 +467,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   fetchTasks: async (customerId: string) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -415,7 +496,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   fetchTags: async (customerId: string) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('tags')
         .select('*')
@@ -435,7 +522,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   fetchAllInteractions: async () => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('interactions')
         .select('*')
@@ -458,7 +551,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   fetchAllTasks: async () => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -481,7 +580,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   fetchAllTags: async () => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { data, error } = await supabase
         .from('tags')
         .select('*')
@@ -501,7 +606,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   },
 
   updateCustomerDetails: async (id, details) => {
+    const supabase = createClientComponentClient()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
       const { error } = await supabase
         .from('customers')
         .update({
@@ -513,6 +624,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
+        .eq('user_id', session.user.id) // Extra safety check
 
       if (error) throw error
 
@@ -537,4 +649,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
     }
   }
 }))
+
+const searchCustomers = async (query: string) => {
+  const supabase = createClientComponentClient()
+  const { data, error } = await supabase
+    .from("customers")
+    .select("*")
+    .or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`)
+    .order("created_at", { ascending: false })
+
+  if (error) throw new Error(error.message)
+  
+  return data.map(mapCustomerData)
+}
 

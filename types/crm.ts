@@ -12,6 +12,7 @@ export interface Customer {
   budgetFit: number
   createdAt: Date
   updatedAt: Date
+  addedBy: string
 }
 
 export interface Interaction {

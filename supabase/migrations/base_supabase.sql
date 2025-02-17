@@ -50,6 +50,7 @@ VALUES ('test-user@example.com', 'user', TRUE);
 ------------------------------------------------------------
 CREATE TABLE customers (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES crm_users(id),
   name TEXT NOT NULL,
   email TEXT,
   phone TEXT NOT NULL,

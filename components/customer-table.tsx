@@ -168,6 +168,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
               <TableHead className="font-semibold">Phone</TableHead>
               <TableHead className="font-semibold">School</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold">Added By</TableHead> {/* Add this line */}
               <TableHead className="font-semibold">Lead Score</TableHead>
               <TableHead className="text-right font-semibold">Actions</TableHead>
             </TableRow>
@@ -175,7 +176,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
           <TableBody>
             {filteredCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell colSpan={8} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center text-gray-500">
                     <p className="mb-2">No customers found</p>
                     <p className="text-sm">Try adjusting your search criteria</p>
@@ -197,6 +198,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
                       {customer.status}
                     </span>
                   </TableCell>
+                  <TableCell className="text-gray-600">{customer.addedBy}</TableCell> {/* Add this line */}
                   <TableCell>
                     <div className="flex flex-col gap-1.5">
                       <div className="w-full bg-gray-100 rounded-full h-1.5">

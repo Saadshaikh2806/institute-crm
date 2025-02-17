@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCRMStore } from "@/store/crm-store"
 import { toast } from "sonner"
 import * as XLSX from 'xlsx'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface AddCustomerDialogProps {
   open: boolean
@@ -18,6 +19,7 @@ interface AddCustomerDialogProps {
 
 export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps) {
   const addCustomer = useCRMStore((state) => state.addCustomer)
+  const fetchCustomers = useCRMStore((state) => state.fetchCustomers)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -30,23 +32,42 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     engagement: 0,
     interestLevel: 0,
     budgetFit: 0,
+    addedBy: "" // Add this field
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     
-    if (!formData.name || !formData.phone) {
-      toast.error("Name and phone are required")
-      return
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+  
+    if (!session?.user?.id) {
+      toast.error("Please sign in to add customers");
+      return;
     }
+  
+    const customerData = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      school: formData.school,
+      source: formData.source || 'direct',
+      status: formData.status || 'lead',
+      leadScore: formData.leadScore,
+      engagement: formData.engagement,
+      interestLevel: formData.interestLevel,
+      budgetFit: formData.budgetFit,
+      addedBy: formData.addedBy // Just use the form input value directly
+    };
 
     try {
-      setIsSubmitting(true)
-      await addCustomer(formData)
-      onOpenChange(false)
+      await addCustomer(customerData);
+      await fetchCustomers();
+      toast.success("Customer added successfully");
+      onOpenChange(false);
       setFormData({
         name: "",
         email: "",
@@ -58,13 +79,13 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
         engagement: 0,
         interestLevel: 0,
         budgetFit: 0,
-      })
-    } catch (error) {
-      console.error('Error in form submission:', error)
-    } finally {
-      setIsSubmitting(false)
+        addedBy: ""
+      });
+    } catch (error: any) {
+      console.error("Error adding customer:", error);
+      toast.error(error.message);
     }
-  }
+  };
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -160,6 +181,19 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       return
     }
 
+    if (!formData.addedBy) {
+      toast.error('Please enter your name in the "Added By" field first')
+      return
+    }
+
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+  
+    if (!session?.user?.id) {
+      toast.error("Please sign in to add customers");
+      return;
+    }
+
     setIsSubmitting(true)
     try {
       const processedData = await processFile(selectedFile)
@@ -172,7 +206,6 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       let successCount = 0
       let errorCount = 0
 
-      // Process each record
       for (const record of processedData) {
         try {
           await addCustomer({
@@ -188,7 +221,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
             leadScore: 0,
             engagement: 0,
             interestLevel: 0,
-            budgetFit: 0
+            budgetFit: 0,
+            addedBy: record.addedby || formData.addedBy // Try to use CSV value first, then form value
           })
           successCount++
         } catch (error) {
@@ -241,6 +275,16 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
           <TabsContent value="single">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="addedBy">Added By *</Label>
+                <Input
+                  id="addedBy"
+                  placeholder="Enter your name or identifier"
+                  value={formData.addedBy}
+                  onChange={(e) => handleChange("addedBy", e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input
                   id="name"
@@ -289,6 +333,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                     <SelectItem value="Website">Website</SelectItem>
                     <SelectItem value="Referral">Referral</SelectItem>
                     <SelectItem value="Social Media">Social Media</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem> {/* Add this line */}
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -318,6 +363,20 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
           </TabsContent>
           <TabsContent value="bulk">
             <div className="space-y-4">
+              {/* Add Added By field for bulk imports */}
+              <div className="space-y-2">
+                <Label htmlFor="bulkAddedBy">Added By *</Label>
+                <Input
+                  id="bulkAddedBy"
+                  placeholder="Enter your name or identifier"
+                  value={formData.addedBy}
+                  onChange={(e) => handleChange("addedBy", e.target.value)}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will be used as fallback if not specified in the CSV file
+                </p>
+              </div>
               <div className="flex justify-end">
                 <Button 
                   variant="link" 
