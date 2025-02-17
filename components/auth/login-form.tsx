@@ -12,6 +12,7 @@ const RATE_LIMIT_DURATION = 60 * 1000 // 60 seconds in milliseconds
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [lastAttempt, setLastAttempt] = useState<number | null>(null)
   const [countdown, setCountdown] = useState(0)
@@ -89,6 +90,7 @@ export function LoginForm() {
 
     setIsLoading(true)
     const normalizedEmail = email.toLowerCase().trim()
+    const normalizedUsername = username.trim()
 
     try {
       console.log('Checking user access for:', normalizedEmail)
@@ -96,8 +98,9 @@ export function LoginForm() {
       // Check for the specific user
       const { data: users, error: userError } = await supabase
         .from('crm_users')
-        .select('role, is_active, email')
+        .select('role, is_active, email, username')
         .eq('email', normalizedEmail)
+        .eq('username', normalizedUsername)
 
       console.log('User query result:', { users, userError, normalizedEmail })
 
@@ -110,7 +113,7 @@ export function LoginForm() {
       const user = users?.[0]
       if (!user) {
         console.log('No user found for email:', normalizedEmail)
-        toast.error("You don't have access to the CRM. Please contact your administrator.")
+        toast.error("Invalid username or email combination")
         return
       }
 
@@ -172,9 +175,21 @@ export function LoginForm() {
       <form onSubmit={onSubmit}>
         <div className="grid gap-2">
           <div className="grid gap-1">
-            <Label className="sr-only" htmlFor="email">
-              Email
-            </Label>
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              placeholder="username"
+              type="text"
+              autoCapitalize="none"
+              autoCorrect="off"
+              disabled={isLoading || isRateLimited}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="grid gap-1">
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               placeholder="name@example.com"
@@ -200,4 +215,4 @@ export function LoginForm() {
       </form>
     </div>
   )
-} 
+}

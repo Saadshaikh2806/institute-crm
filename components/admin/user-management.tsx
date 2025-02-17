@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase"
 interface User {
   id: string
   email: string
+  username: string
   role: "admin" | "user"
   is_active: boolean
   created_at: string
@@ -20,6 +21,7 @@ interface User {
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [newUserEmail, setNewUserEmail] = useState("")
+  const [newUsername, setNewUsername] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export function UserManagement() {
         .insert([
           { 
             email: newUserEmail,
+            username: newUsername,
             role: 'user'
           }
         ])
@@ -58,6 +61,7 @@ export function UserManagement() {
 
       toast.success("User added successfully")
       setNewUserEmail("")
+      setNewUsername("")
       fetchUsers()
     } catch (error) {
       console.error('Error:', error)
@@ -90,6 +94,13 @@ export function UserManagement() {
         <h2 className="text-xl font-semibold">Add New User</h2>
         <form onSubmit={addUser} className="flex gap-4">
           <Input
+            type="text"
+            placeholder="Enter username"
+            value={newUsername}
+            onChange={(e) => setNewUsername(e.target.value)}
+            className="max-w-md"
+          />
+          <Input
             type="email"
             placeholder="Enter email address"
             value={newUserEmail}
@@ -107,6 +118,7 @@ export function UserManagement() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Username</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
@@ -117,6 +129,7 @@ export function UserManagement() {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
+                <TableCell>{user.username}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell className="capitalize">{user.role}</TableCell>
                 <TableCell>
@@ -146,4 +159,4 @@ export function UserManagement() {
       </div>
     </div>
   )
-} 
+}

@@ -34,6 +34,7 @@ export function CustomerDashboard() {
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const [username, setUsername] = useState("")
 
   useEffect(() => {
     // Fetch all data when component mounts
@@ -57,6 +58,24 @@ export function CustomerDashboard() {
     }
     
     checkAdminStatus()
+  }, [session, supabase])
+
+  useEffect(() => {
+    async function fetchUserDetails() {
+      if (!session?.user?.email) return
+      
+      const { data } = await supabase
+        .from('crm_users')
+        .select('username')
+        .eq('email', session.user.email)
+        .single()
+        
+      if (data?.username) {
+        setUsername(data.username)
+      }
+    }
+    
+    fetchUserDetails()
   }, [session, supabase])
 
   const totalCustomers = customers.length
@@ -126,6 +145,9 @@ export function CustomerDashboard() {
       <div className="flex justify-between items-center">
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold">ADCI CRM</h1>
+          <h2 className="text-3xl font-bold mt-2 text-primary">
+            Welcome, {username}
+          </h2>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>Developed by Saad Shaikh</span>
             <div className="flex items-center gap-2">
