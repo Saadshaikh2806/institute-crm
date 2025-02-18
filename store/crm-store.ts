@@ -52,6 +52,7 @@ interface CRMStore {
       source: string
     }
   ) => Promise<void>
+  deleteTask: (id: string) => Promise<void>
 }
 
 export const useCRMStore = create<CRMStore>((set, get) => ({
@@ -310,9 +311,11 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         .from('tasks')
         .insert([{
           customer_id: task.customerId,
+          user_id: task.userId,
           title: task.title,
           completed: task.completed,
-          due_date: task.dueDate.toISOString()
+          due_date: typeof task.dueDate === 'string' ? task.dueDate : task.dueDate.toISOString(),
+          created_at: task.createdAt
         }])
         .select()
 
@@ -322,9 +325,11 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         const newTask: Task = {
           id: data[0].id,
           customerId: data[0].customer_id,
+          userId: data[0].user_id,
           title: data[0].title,
           completed: data[0].completed,
-          dueDate: new Date(data[0].due_date)
+          dueDate: data[0].due_date,
+          createdAt: data[0].created_at
         }
 
         set((state) => ({
@@ -369,6 +374,34 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
     } catch (error) {
       console.error('Error toggling task:', error)
       toast.error('Failed to update task')
+    }
+  },
+
+  deleteTask: async (id) => {
+    const supabase = createClientComponentClient()
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error('Not authenticated')
+      }
+
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', session.user.id)
+
+      if (error) throw error
+
+      set((state) => ({
+        tasks: state.tasks.filter((task) => task.id !== id)
+      }))
+
+      toast.success('Task deleted successfully')
+    } catch (error) {
+      console.error('Error deleting task:', error)
+      toast.error('Failed to delete task')
+      throw error
     }
   },
 
@@ -482,13 +515,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       if (error) throw error
 
-      set({ tasks: data.map(task => ({
-        id: task.id,
-        customerId: task.customer_id,
-        title: task.title,
-        completed: task.completed,
-        dueDate: new Date(task.due_date)
-      }))})
+      set({ 
+        tasks: data.map(task => ({
+          id: task.id,
+          customerId: task.customer_id,
+          userId: task.user_id,
+          title: task.title,
+          completed: task.completed,
+          dueDate: task.due_date,
+          createdAt: task.created_at
+        }))
+      })
     } catch (error) {
       console.error('Error fetching tasks:', error)
       toast.error('Failed to fetch tasks')
@@ -569,9 +606,11 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         tasks: data.map(task => ({
           id: task.id,
           customerId: task.customer_id,
+          userId: task.user_id,
           title: task.title,
           completed: task.completed,
-          dueDate: new Date(task.due_date)
+          dueDate: task.due_date,
+          createdAt: task.created_at
         }))
       })
     } catch (error) {

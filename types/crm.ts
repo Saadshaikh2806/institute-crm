@@ -26,9 +26,11 @@ export interface Interaction {
 export interface Task {
   id: string
   customerId: string
+  userId: string
   title: string
   completed: boolean
-  dueDate: Date
+  dueDate: Date | string
+  createdAt: string
 }
 
 export interface Tag {

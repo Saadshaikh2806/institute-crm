@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { X } from "lucide-react"
+import { X, CalendarIcon, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,10 @@ import { format } from "date-fns"
 import type { Customer } from "@/types/crm"
 import { calculateLeadScore, isHotLead, cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { CalendarPicker } from "@/components/calendar-picker"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface CustomerDetailsDialogProps {
   open: boolean
@@ -39,7 +43,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
     fetchInteractions,
     fetchTasks,
     fetchTags,
-    fetchCustomers
+    fetchCustomers,
+    deleteTask
   } = useCRMStore()
 
   const customer = customers.find((c) => c.id === customerId)
@@ -49,6 +54,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
 
   const [newInteraction, setNewInteraction] = useState<{ type: "note" | "call" | "email" | "meeting", details: string }>({ type: "note", details: "" })
   const [newTask, setNewTask] = useState("")
+  const [taskDueDate, setTaskDueDate] = useState<Date>(new Date())
   const [newTag, setNewTag] = useState("")
   const [scores, setScores] = useState({
     engagement: customer?.engagement || 0,
@@ -63,6 +69,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
     school: '',
     source: ''
   })
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const currentLeadScore = useMemo(() => {
     return calculateLeadScore(scores.engagement, scores.interestLevel, scores.budgetFit)
@@ -146,17 +153,29 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
       return
     }
 
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user?.id) {
+      toast.error("Please sign in to add tasks");
+      return;
+    }
+
     try {
       await addTask({
         customerId,
+        userId: session.user.id,  // Add this line
         title: newTask,
         completed: false,
-        dueDate: new Date()
+        dueDate: taskDueDate,
+        createdAt: new Date().toISOString()
       })
       setNewTask("")
+      setTaskDueDate(new Date()) // Reset date to today
       await fetchTasks(customerId)
     } catch (error) {
       console.error('Error adding task:', error)
+      toast.error('Failed to add task')
     }
   }
 
@@ -193,6 +212,19 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
       await fetchTasks(customerId)
     } catch (error) {
       console.error('Error toggling task:', error)
+    }
+  }
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) return;
+    
+    try {
+      await deleteTask(taskId)
+      await fetchTasks(customerId)
+      toast.success('Task deleted successfully')
+    } catch (error) {
+      console.error('Error deleting task:', error)
+      toast.error('Failed to delete task')
     }
   }
 
@@ -479,14 +511,41 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                   </TabsContent>
 
                   <TabsContent value="tasks" className="space-y-4 mt-0">
-                    <div className="flex gap-2">
+                    <div className="space-y-3">
                       <Input
                         placeholder="New task..."
                         value={newTask}
                         onChange={(e) => setNewTask(e.target.value)}
                         className="flex-1"
                       />
-                      <Button onClick={handleAddTask}>Add</Button>
+                      <div className="flex gap-2 relative">
+                        <button
+                          onClick={() => setShowCalendar(!showCalendar)}
+                          className="flex items-center gap-2 px-4 py-2 border rounded hover:bg-gray-50"
+                        >
+                          <span className="text-gray-600">📅</span>
+                          {format(taskDueDate, "MMM d, yyyy")}
+                        </button>
+                        <Button onClick={handleAddTask}>Add Task</Button>
+                        
+                        {showCalendar && (
+                          <div className="absolute top-full left-0 mt-1 z-50">
+                            <div 
+                              className="fixed inset-0" 
+                              onClick={() => setShowCalendar(false)}
+                            />
+                            <div className="relative">
+                              <CalendarPicker
+                                selectedDate={taskDueDate}
+                                onDateSelect={(date) => {
+                                  setTaskDueDate(date);
+                                  setShowCalendar(false);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="max-h-[30vh] overflow-y-auto pr-2">
@@ -507,9 +566,22 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                                 onChange={() => handleToggleTask(task.id)}
                                 className="h-4 w-4 rounded border-gray-300"
                               />
-                              <span className={task.completed ? "line-through text-gray-500" : "flex-1"}>
-                                {task.title}
-                              </span>
+                              <div className="flex-1">
+                                <span className={task.completed ? "line-through text-gray-500" : ""}>
+                                  {task.title}
+                                </span>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Due: {format(new Date(task.dueDate), "PPP")}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="h-8 w-8 hover:bg-red-100 hover:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           ))}
                         </div>
