@@ -5,7 +5,7 @@ import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
-import { useCRMStore } from "@/store" // Import the store
+import { useCRMStore } from "@/store/crm-store" // Fix import path
 
 export function AdminHeader() {
   const router = useRouter()
