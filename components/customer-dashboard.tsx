@@ -141,14 +141,19 @@ export function CustomerDashboard() {
   const handleSignOut = async () => {
     setIsSigningOut(true)
     try {
+      // Clear the store data first
+      useCRMStore.getState().clearStore()
+      
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       
       router.push('/login')
+      router.refresh() // Force a router refresh
       toast.success("Signed out successfully")
     } catch (error) {
       console.error('Error signing out:', error)
       toast.error("Error signing out")
+    } finally {
       setIsSigningOut(false)
     }
   }

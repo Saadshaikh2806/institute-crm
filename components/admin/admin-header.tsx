@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
+import { useCRMStore } from "@/store" // Import the store
 
 export function AdminHeader() {
   const router = useRouter()
@@ -12,10 +13,14 @@ export function AdminHeader() {
 
   const handleSignOut = async () => {
     try {
+      // Clear the store data first
+      useCRMStore.getState().clearStore()
+      
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       
       router.push('/login')
+      router.refresh() // Force a router refresh
       toast.success("Signed out successfully")
     } catch (error) {
       console.error('Error signing out:', error)
@@ -39,4 +44,4 @@ export function AdminHeader() {
       </div>
     </div>
   )
-} 
+}

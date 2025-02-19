@@ -53,6 +53,7 @@ interface CRMStore {
     }
   ) => Promise<void>
   deleteTask: (id: string) => Promise<void>
+  clearStore: () => void
 }
 
 export const useCRMStore = create<CRMStore>((set, get) => ({
@@ -61,12 +62,22 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
   tasks: [],
   tags: [],
 
+  clearStore: () => {
+    set({
+      customers: [],
+      interactions: [],
+      tasks: [],
+      tags: []
+    })
+  },
+
   fetchCustomers: async () => {
     const supabase = createClientComponentClient()
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user?.id) {
-        throw new Error('Not authenticated')
+        // Instead of throwing error, just return silently when not authenticated
+        return
       }
 
       const { data: customers, error } = await supabase
@@ -81,7 +92,10 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       })
     } catch (error) {
       console.error('Error fetching customers:', error)
-      toast.error('Failed to fetch customers')
+      // Only show toast if it's a real error, not an auth error
+      if (error instanceof Error && error.message !== 'Not authenticated') {
+        toast.error('Failed to fetch customers')
+      }
     }
   },
 
