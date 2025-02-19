@@ -20,7 +20,14 @@ const supabaseAdmin = createClient(
 
 export async function GET(req: Request) {
   const supabase = createRouteHandlerClient({ cookies })
-  const today = new Date().toISOString().split('T')[0];
+  
+  // Get date in IST (India Standard Time)
+  const today = new Date().toLocaleString('en-US', { 
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).split(',')[0].split('/').reverse().join('-');
 
   try {
     // Get the logged-in user's session
