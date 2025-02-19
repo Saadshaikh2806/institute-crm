@@ -45,7 +45,6 @@ export const sendTaskEmail = async (to: string, tasks: any[]) => {
       ` : tasks.map(task => `
         <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
           <h3 style="color: #2c3e50; margin: 0 0 10px 0;">${task.title}</h3>
-          <p style="color: #34495e; margin: 5px 0;"><strong>Description:</strong> ${task.description || 'No description'}</p>
           <p style="color: #7f8c8d;"><strong>Due Date:</strong> ${new Date(task.due_date).toLocaleString()}</p>
           <p style="color: #7f8c8d;"><strong>Priority:</strong> ${task.priority || 'Not set'}</p>
           ${task.status ? `<p style="color: #7f8c8d;"><strong>Status:</strong> ${task.status}</p>` : ''}

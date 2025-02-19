@@ -1,7 +1,12 @@
 {
+  "version": 2,
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
   "crons": [{
     "path": "/api/notifications/tasks",
     "schedule": "0 8 * * *"
   }],
   "timezone": "Asia/Kolkata"
+  
 }
