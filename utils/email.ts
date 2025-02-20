@@ -93,3 +93,22 @@ export const sendTaskEmail = async (to: string, tasks: any[]) => {
     throw error;
   }
 };
+
+interface NotificationEmailParams {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}
+
+export const sendNotificationEmail = async ({ to, subject, text, html }: NotificationEmailParams) => {
+  const transporter = emailTransporter;
+
+  return await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to,
+    subject,
+    text,
+    html
+  });
+};

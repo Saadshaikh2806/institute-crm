@@ -2,7 +2,8 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendTaskEmail } from '@/utils/email'
+import { sql } from '@vercel/postgres'
+import { sendNotificationEmail } from '@/utils/email'
 
 export const dynamic = 'force-dynamic'
 export const preferredRegion = 'auto'
@@ -18,77 +19,50 @@ const supabaseAdmin = createClient(
   }
 )
 
-export async function GET(req: Request) {
-  const supabase = createRouteHandlerClient({ cookies })
-  
-  // Get date in IST (India Standard Time)
-  const today = new Date().toLocaleString('en-US', { 
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).split(',')[0].split('/').reverse().join('-');
-
+// This function will be called by the cron job
+export async function GET() {
   try {
-    // Get the logged-in user's session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'No authenticated user found',
-        error: sessionError?.message
-      }, { status: 401 });
+    // Get all tasks where the deadline is tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDate = tomorrow.toISOString().split('T')[0];
+
+    const { rows: tasks } = await sql`
+      SELECT t.*, c.name as customer_name, c.email as customer_email
+      FROM tasks t
+      JOIN customers c ON t.customer_id = c.id
+      WHERE t.deadline::date = ${tomorrowDate}::date
+      AND t.status != 'completed'
+    `;
+
+    // If there are no tasks due tomorrow, return early
+    if (tasks.length === 0) {
+      return NextResponse.json({ message: 'No tasks due tomorrow' }, { status: 200 });
     }
 
-    const userEmail = session.user.email;
-    if (!userEmail) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'User email not found'
-      }, { status: 400 });
+    // Send email notifications for each task
+    for (const task of tasks) {
+      await sendNotificationEmail({
+        to: task.customer_email,
+        subject: 'Task Deadline Reminder',
+        text: `Reminder: Your task "${task.title}" is due tomorrow.`,
+        html: `
+          <h2>Task Deadline Reminder</h2>
+          <p>This is a reminder that your task "${task.title}" is due tomorrow.</p>
+          <p>Task Details:</p>
+          <ul>
+            <li>Title: ${task.title}</li>
+            <li>Description: ${task.description}</li>
+            <li>Deadline: ${new Date(task.deadline).toLocaleDateString()}</li>
+          </ul>
+        `
+      });
     }
 
-    const { data: tasks, error: tasksError } = await supabase
-      .from('tasks')
-      .select(`
-        *,
-        customers (
-          name,
-          email,
-          phone
-        )
-      `)
-      .eq('completed', false)
-      .eq('due_date::date', today);
+    return NextResponse.json({ success: true, tasksNotified: tasks.length }, { status: 200 });
 
-    if (tasksError) {
-      throw new Error(`Tasks query error: ${tasksError.message}`);
-    }
-
-    // Always send email, even with empty tasks array
-    try {
-      await sendTaskEmail(userEmail, tasks || []);
-    } catch (emailError: any) {
-      console.error(`Failed to send email to ${userEmail}:`, emailError);
-      throw emailError;
-    }
-
-    return NextResponse.json({
-      success: true,
-      tasks: tasks || [],
-      tasksFound: tasks?.length || 0,
-      emailSentTo: userEmail,
-      emailType: tasks?.length ? 'task-list' : 'sarcastic-empty'
-    });
-
-  } catch (error: any) {
-    return NextResponse.json({ 
-      error: 'Failed to fetch tasks or send emails', 
-      details: error.message,
-      timestamp: new Date().toISOString()
-    }, { 
-      status: 500 
-    });
+  } catch (error) {
+    console.error('Error in task notification cron:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

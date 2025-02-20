@@ -3,8 +3,16 @@
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "npm install",
-  "crons": [{
-    "path": "/api/notifications/tasks",
-    "schedule": "0 8 * * *"
-  }]
+  "crons": [
+    {
+      "path": "/api/notifications/tasks",
+      "schedule": "45 14 * * *"
+    }
+  ],
+  "functions": {
+    "app/api/notifications/tasks/route.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
 }
