@@ -34,7 +34,7 @@ export function CustomerDashboard() {
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const [isSigningOut, setIsSigningOut] = useState(false)
-  const [username, setUsername] = useState("")
+  const [fullName, setFullName] = useState("")  // Changed from username
 
   useEffect(() => {
     // Fetch all data when component mounts
@@ -64,14 +64,16 @@ export function CustomerDashboard() {
     async function fetchUserDetails() {
       if (!session?.user?.email) return
       
-      const { data } = await supabase
+      const { data } = await supabase  // Get the data first
         .from('crm_users')
-        .select('username')
+        .select('full_name')
         .eq('email', session.user.email)
         .single()
         
-      if (data?.username) {
-        setUsername(data.username)
+      const full_name = data?.full_name  // Safely access the property
+        
+      if (full_name) {  // Use the snake_case name from database
+        setFullName(full_name)  // Convert to camelCase when setting state
       }
     }
     
@@ -164,7 +166,7 @@ export function CustomerDashboard() {
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold">ADCI CRM</h1>
           <h2 className="text-3xl font-bold mt-2 text-primary">
-            Welcome, {username}
+            Welcome, {fullName || 'User'}  {/* Changed from username */}
           </h2>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>Developed by Saad Shaikh</span>
