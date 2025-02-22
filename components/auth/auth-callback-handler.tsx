@@ -45,20 +45,20 @@ export function AuthCallbackHandler() {
           }
 
           // Get the user's role
-          const { data: user, error: userError } = await supabase
+          const { data: userData, error: userError } = await supabase
             .from('crm_users')
-            .select('role, is_active')
+            .select('role, is_active, email')
             .eq('email', session.user.email)
             .single()
 
-          if (userError || !user) {
+          if (userError || !userData) {
             console.error('User error:', userError)
             router.push('/login?error=no_access')
             return
           }
 
           // Check if user is active
-          if (!user.is_active) {
+          if (!userData.is_active) {
             router.push('/login?error=inactive')
             return
           }
@@ -67,13 +67,13 @@ export function AuthCallbackHandler() {
           await supabase
             .from('crm_users')
             .update({ last_login: new Date().toISOString() })
-            .eq('email', session.user.email)
+            .eq('email', userData.email)
 
           // Clear the hash from the URL without triggering a refresh
           window.history.replaceState(null, '', window.location.pathname)
 
           // Redirect based on role
-          if (user.role === 'admin') {
+          if (userData.role === 'admin') {
             router.push('/admin')
           } else {
             router.push('/')
@@ -89,4 +89,4 @@ export function AuthCallbackHandler() {
   }, [router, supabase])
 
   return null
-} 
+}

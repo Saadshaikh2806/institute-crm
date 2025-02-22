@@ -328,7 +328,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           user_id: task.userId,
           title: task.title,
           completed: task.completed,
-          due_date: typeof task.dueDate === 'string' ? task.dueDate : task.dueDate.toISOString(),
+          duedate: typeof task.dueDate === 'string' ? task.dueDate : task.dueDate.toISOString(),
           created_at: task.createdAt
         }])
         .select()
@@ -342,7 +342,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           userId: data[0].user_id,
           title: data[0].title,
           completed: data[0].completed,
-          dueDate: data[0].due_date,
+          dueDate: data[0].duedate,
           createdAt: data[0].created_at
         }
 
@@ -536,7 +536,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           userId: task.user_id,
           title: task.title,
           completed: task.completed,
-          dueDate: task.due_date,
+          dueDate: task.duedate,
           createdAt: task.created_at
         }))
       })
@@ -623,7 +623,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           userId: task.user_id,
           title: task.title,
           completed: task.completed,
-          dueDate: task.due_date,
+          dueDate: task.duedate,
           createdAt: task.created_at
         }))
       })

@@ -55,9 +55,8 @@ export function LoginForm() {
     const remaining = Math.max(0, RATE_LIMIT_DURATION - elapsed)
     return remaining
   }
-
   // Show error messages if any
-  const error = searchParams.get('error')
+  const error = searchParams?.get('error')
   if (error === 'auth') {
     toast.error("Authentication failed. Please try again.")
   } else if (error === 'callback') {
@@ -75,7 +74,6 @@ export function LoginForm() {
   } else if (error === 'admin_required') {
     toast.error("You need administrator access for this area. Please login with an admin account.")
   }
-
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -98,9 +96,8 @@ export function LoginForm() {
       // Check for the specific user
       const { data: users, error: userError } = await supabase
         .from('crm_users')
-        .select('role, is_active, email, username')
+        .select('role, is_active, email, full_name')
         .eq('email', normalizedEmail)
-        .eq('username', normalizedUsername)
 
       console.log('User query result:', { users, userError, normalizedEmail })
 

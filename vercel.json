@@ -3,16 +3,11 @@
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "npm install",
+  "output": "standalone",
   "crons": [
     {
-      "path": "/api/notifications/tasks",
-      "schedule": "45 14 * * *"
+      "path": "/api/public/daily-tasks",
+      "schedule": "0 8 * * *"
     }
-  ],
-  "functions": {
-    "app/api/notifications/tasks/route.ts": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
+  ]
 }
