@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplate } from '@/components/email/email-template'
 
+// Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -16,7 +17,8 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export const maxDuration = 300 // Set max duration to 5 minutes
+// Set maxDuration to 60 seconds (maximum allowed for hobby plan)
+export const maxDuration = 60
 
 export async function GET(request: Request) {
   console.log('Cron endpoint hit:', new Date().toISOString())
