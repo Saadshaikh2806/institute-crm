@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplate } from '@/components/email/email-template'
 
+// Add these route segment configuration exports
+export const dynamic = 'force-dynamic'
+export const runtime = 'edge'
+export const maxDuration = 60
+
 // Define types for our task data
 interface Task {
   task_id: number
@@ -25,7 +30,6 @@ const supabase = createClient(
 )
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-export const maxDuration = 60
 
 export async function GET(request: Request) {
   console.log('Cron endpoint hit:', new Date().toISOString())
