@@ -1,16 +1,10 @@
 "use client"
 
-import { Metadata } from "next"
 import { UserManagement } from "@/components/admin/user-management"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-
-export const metadata: Metadata = {
-  title: "Admin - ADCI CRM",
-  description: "Admin panel for CRM user management",
-}
 
 export default function AdminPage() {
   const [isSendingEmails, setIsSendingEmails] = useState(false)
