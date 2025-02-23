@@ -41,13 +41,11 @@ export async function GET(request: Request) {
 
     console.log('Starting cron execution with auth:', true)
 
-    // Get tasks due today from the view
+    // Get all incomplete tasks from the view
     const { data: tasks, error: tasksError } = await supabase
       .from('daily_tasks_view')
       .select('*')
-      .eq('completed', false)
-      .gte('due_date', new Date().toISOString().split('T')[0]) // Today's date
-      .lte('due_date', new Date().toISOString().split('T')[0]) // Today's date
+      .eq('completed', false)  // Only filter by completion status
       .returns<Task[]>()
 
     if (tasksError) {
@@ -55,7 +53,7 @@ export async function GET(request: Request) {
       throw tasksError
     }
 
-    console.log(`Found ${tasks?.length || 0} tasks due today`)
+    console.log(`Found ${tasks?.length || 0} incomplete tasks`)
 
     // Group tasks by user_email
     const tasksByUser = tasks?.reduce<Record<string, Task[]>>((acc, task) => {
