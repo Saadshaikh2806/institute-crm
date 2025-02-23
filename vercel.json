@@ -9,23 +9,5 @@
       "schedule": "22 14 * * *"
     }
   ],
-  "headers": [
-    {
-      "source": "/api/cron/daily-emails",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, max-age=0"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/cron/daily-emails",
-      "destination": "/api/cron/daily-emails"
-    }
-  ],
-  "regions": ["sin1"],
   "cleanUrls": true
 }

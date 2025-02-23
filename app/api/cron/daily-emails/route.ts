@@ -3,9 +3,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplate } from '@/components/email/email-template'
 
-// Mark as edge runtime
-export const runtime = 'edge'
-
+// Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -14,19 +12,13 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function GET(request: Request) {
-  console.log('Daily email cron job started')
+  // Simple console log to verify the route is hit
+  console.log('Cron endpoint hit:', new Date().toISOString())
 
-  // Add authorization check for Vercel cron
+  // Basic auth check
   const authHeader = request.headers.get('Authorization')
-  
   if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-    console.error('Unauthorized cron attempt')
-    return new NextResponse('Unauthorized', { 
-      status: 401,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
+    return new NextResponse('Unauthorized', { status: 401 })
   }
 
   try {
