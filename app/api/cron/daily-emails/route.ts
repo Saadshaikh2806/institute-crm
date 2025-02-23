@@ -3,19 +3,10 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplate } from '@/components/email/email-template'
 
-// Add edge runtime directive
-export const runtime = 'edge'
-
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL')
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Missing env.SUPABASE_SERVICE_ROLE_KEY')
-if (!process.env.RESEND_API_KEY) throw new Error('Missing env.RESEND_API_KEY')
-if (!process.env.EMAIL_FROM) throw new Error('Missing env.EMAIL_FROM')
-if (!process.env.CRON_SECRET_KEY) throw new Error('Missing env.CRON_SECRET_KEY')
-
 // Initialize Supabase with service role for broader access
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -27,9 +18,20 @@ export async function GET(request: Request) {
   console.log('Daily email cron job started')
   
   try {
+    // Log environment check
+    console.log('Checking environment variables:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      hasResendKey: !!process.env.RESEND_API_KEY,
+      hasEmailFrom: !!process.env.EMAIL_FROM,
+    })
+
     // Verify cron secret
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
+    console.log('Auth header present:', !!authHeader)
+    
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
+      console.log('Authorization failed')
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
