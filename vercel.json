@@ -5,8 +5,8 @@
   "installCommand": "npm install",
   "crons": [
     {
-      "path": "/api/public/daily-tasks",
-      "schedule": "0 8 * * *"
+      "path": "/api/cron/daily-emails",
+      "schedule": "25 14 * * *"
     }
   ]
 }
