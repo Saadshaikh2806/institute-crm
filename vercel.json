@@ -8,5 +8,16 @@
       "path": "/api/cron/daily-emails",
       "schedule": "22 14 * * *"
     }
+  ],
+  "headers": [
+    {
+      "source": "/api/cron/daily-emails",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
   ]
 }
