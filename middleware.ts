@@ -34,6 +34,18 @@ export async function middleware(req: NextRequest) {
     startPeriodicEmails();
   }
 
+  // Check if it's a cron request
+  if (req.nextUrl.pathname.startsWith('/api/cron')) {
+    const hostname = req.headers.get('host')
+    
+    // If not coming from the main domain, redirect
+    if (hostname !== 'adci-crm.vercel.app') {
+      return NextResponse.redirect(
+        new URL(req.nextUrl.pathname, 'https://adci-crm.vercel.app')
+      )
+    }
+  }
+
   // Skip middleware for public API routes
   if (req.nextUrl.pathname.startsWith('/api/public/')) {
     return NextResponse.next()
@@ -101,5 +113,5 @@ function redirectToLogin(req: NextRequest, error?: string) {
 }
 
 export const config = {
-  matcher: ['/((?!api/public|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api/public|_next/static|_next/image|favicon.ico).*)', '/api/cron/:path*'],
 }
