@@ -19,5 +19,20 @@
         }
       ]
     }
-  ]
+  ],
+  "rewrites": [
+    {
+      "source": "/api/cron/daily-emails",
+      "destination": "/api/cron/daily-emails"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/cron/daily-emails",
+      "dest": "/api/cron/daily-emails",
+      "methods": ["GET"]
+    }
+  ],
+  "regions": ["sin1"],
+  "cleanUrls": true
 }
