@@ -47,7 +47,8 @@ export async function GET(request: Request) {
         react: EmailTemplate({ 
           customerName: customer.name,
           userName: user.full_name,
-          daysWithoutContact: 7
+          daysWithoutContact: 7,
+          pendingTasks: [] // Add empty array to satisfy TypeScript
         })
       })
     })

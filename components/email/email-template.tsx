@@ -11,33 +11,54 @@ import {
   Text,
 } from '@react-email/components';
 
+interface PendingTask {
+  title: string;
+  dueDate: string;
+  customerName?: string;
+}
+
 interface EmailTemplateProps {
   customerName: string;
   userName: string;
   daysWithoutContact: number;
+  pendingTasks: PendingTask[];
 }
 
 export const EmailTemplate: React.FC<EmailTemplateProps> = ({
   customerName,
   userName,
   daysWithoutContact,
+  pendingTasks
 }) => {
   return (
     <Html>
       <Head />
-      <Preview>Follow-up Reminder for {customerName}</Preview>
+      <Preview>CRM Daily Update: Leads and Tasks</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Follow-up Reminder</Heading>
+          <Heading style={h1}>Daily CRM Update</Heading>
           <Text style={text}>Hello {userName},</Text>
-          <Text style={text}>
-            This is a reminder that your lead <strong>{customerName}</strong> hasn't been contacted in {daysWithoutContact} days.
-          </Text>
-          <Section style={buttonContainer}>
-            <Text style={text}>
-              Please follow up with them to maintain engagement and move the lead forward.
-            </Text>
-          </Section>
+          
+          {customerName && (
+            <Section>
+              <Text style={text}>
+                You have high-priority leads that need attention: <strong>{customerName}</strong>
+              </Text>
+            </Section>
+          )}
+
+          {pendingTasks.length > 0 && (
+            <Section>
+              <Text style={subheading}>Pending Tasks Due Soon:</Text>
+              {pendingTasks.map((task, index) => (
+                <Text key={index} style={taskStyle}>
+                  • {task.title} {task.customerName ? `(${task.customerName})` : ''}<br />
+                  <span style={dateStyle}>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                </Text>
+              ))}
+            </Section>
+          )}
+
           <Hr style={hr} />
           <Text style={footer}>ADCI CRM System</Text>
         </Container>
@@ -84,4 +105,23 @@ const hr = {
 const footer = {
   color: '#8898aa',
   fontSize: '12px',
+};
+
+const subheading = {
+  color: '#333',
+  fontSize: '18px',
+  fontWeight: 'bold',
+  marginTop: '20px',
+};
+
+const taskStyle = {
+  color: '#444',
+  fontSize: '14px',
+  marginBottom: '8px',
+};
+
+const dateStyle = {
+  color: '#666',
+  fontSize: '12px',
+  marginLeft: '15px',
 };
