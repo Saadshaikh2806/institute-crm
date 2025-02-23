@@ -35,47 +35,51 @@ export async function GET(request: Request) {
 
     console.log('Starting cron execution with auth:', true)
 
-    // Get active users with leads
+    // First get active users
     const { data: users, error: userError } = await supabase
       .from('crm_users')
-      .select(`
-        id,
-        email,
-        full_name,
-        customers!inner (
-          id,
-          name,
-          status,
-          last_contact
-        )
-      `)
+      .select('id, email, full_name')
       .eq('is_active', true)
-      .eq('customers.status', 'lead')
-      .gt('customers.last_contact', 'now() - interval \'7 days\'')
 
     if (userError) {
-      console.error('Database error fetching users:', userError)
+      console.error('Error fetching users:', userError)
       throw userError
     }
 
-    console.log(`Found ${users?.length || 0} users with leads`)
-
-    if (!users?.length) {
-      return NextResponse.json({ message: 'No users with leads found' })
-    }
+    console.log(`Found ${users?.length || 0} active users`)
 
     const results = []
 
+    // Process each user
     for (const user of users) {
       try {
-        console.log(`Processing user ${user.email} with ${user.customers?.length || 0} leads`)
+        // Get leads for this user
+        const { data: leads, error: leadsError } = await supabase
+          .from('customers')
+          .select('name, created_at, last_contact')
+          .eq('assigned_to', user.id)
+          .eq('status', 'lead')
+          .gt('last_contact', 'now() - interval \'7 days\'')
 
+        if (leadsError) {
+          console.error(`Error fetching leads for ${user.email}:`, leadsError)
+          continue
+        }
+
+        if (!leads?.length) {
+          console.log(`No leads found for ${user.email}`)
+          continue
+        }
+
+        console.log(`Found ${leads.length} leads for ${user.email}`)
+
+        // Send email
         const emailResult = await resend.emails.send({
           from: process.env.EMAIL_FROM!,
-          to: user.email!,
+          to: user.email,
           subject: 'Daily Lead Follow-up Reminder',
           react: EmailTemplate({
-            customerName: user.customers.map(c => c.name).join(', '),
+            customerName: leads.map(l => l.name).join(', '),
             userName: user.full_name,
             daysWithoutContact: 7
           })
@@ -84,7 +88,7 @@ export async function GET(request: Request) {
         results.push(emailResult)
         console.log(`Email sent successfully to ${user.email}`)
       } catch (error) {
-        console.error(`Error sending email to ${user.email}:`, error)
+        console.error(`Error processing user ${user.email}:`, error)
       }
     }
 
