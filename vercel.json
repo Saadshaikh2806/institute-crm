@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/cron/daily-emails",
-      "schedule": "25 19 * * *"
+      "schedule": "50 19 * * *"
     }
   ],
   "cleanUrls": true

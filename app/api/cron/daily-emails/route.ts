@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplate } from '@/components/email/email-template'
 
-// Add these route segment configuration exports
+// Force dynamic for cron
 export const dynamic = 'force-dynamic'
 export const runtime = 'edge'
-export const maxDuration = 60
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
 
 // Define types for our task data
 interface Task {
@@ -32,18 +33,29 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function GET(request: Request) {
-  console.log('Cron endpoint hit:', new Date().toISOString())
+  // Add timestamp to all logs for debugging
+  const timestamp = new Date().toISOString()
+  console.log(`[${timestamp}] Cron endpoint hit`)
   
   try {
-    const proxySignature = request.headers.get('x-vercel-proxy-signature')
-    const isVercelCron = !!proxySignature && proxySignature.startsWith('Bearer ')
+    // Log all headers for debugging
+    console.log(`[${timestamp}] Request headers:`, Object.fromEntries(request.headers.entries()))
     
-    if (!isVercelCron) {
-      console.log('Not a Vercel cron request')
+    // Verify either Vercel cron or manual authorization
+    const proxySignature = request.headers.get('x-vercel-cron') // Changed from x-vercel-proxy-signature
+    const authHeader = request.headers.get('authorization')
+    
+    const isVercelCron = !!proxySignature
+    const hasValidAuth = authHeader === `Bearer ${process.env.CRON_SECRET_KEY}`
+    
+    console.log(`[${timestamp}] Auth check:`, { isVercelCron, hasValidAuth })
+
+    if (!isVercelCron && !hasValidAuth) {
+      console.log(`[${timestamp}] Unauthorized request`)
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    console.log('Starting cron execution with auth:', true)
+    console.log(`[${timestamp}] Starting task fetching`)
 
     // Get all incomplete tasks from the view
     const { data: tasks, error: tasksError } = await supabase
@@ -53,11 +65,11 @@ export async function GET(request: Request) {
       .returns<Task[]>()
 
     if (tasksError) {
-      console.error('Error fetching tasks:', tasksError)
+      console.error(`[${timestamp}] Error fetching tasks:`, tasksError)
       throw tasksError
     }
 
-    console.log(`Found ${tasks?.length || 0} incomplete tasks`)
+    console.log(`[${timestamp}] Found ${tasks?.length || 0} incomplete tasks`)
 
     // Group tasks by user_email
     const tasksByUser = tasks?.reduce<Record<string, Task[]>>((acc, task) => {
@@ -73,7 +85,7 @@ export async function GET(request: Request) {
     // Send emails for each user's tasks
     for (const [email, userTasks] of Object.entries(tasksByUser)) {
       try {
-        console.log(`Processing ${userTasks.length} tasks for ${email}`)
+        console.log(`[${timestamp}] Processing ${userTasks.length} tasks for ${email}`)
 
         const tasksList = userTasks
           .map((t: Task) => `${t.task_title} - ${t.customer_name} (${t.customer_phone})`)
@@ -92,24 +104,31 @@ export async function GET(request: Request) {
         })
 
         results.push(emailResult)
-        console.log(`Email sent successfully to ${email}`)
+        console.log(`[${timestamp}] Email sent successfully to ${email}`)
       } catch (error) {
-        console.error(`Error processing tasks for ${email}:`, error)
+        console.error(`[${timestamp}] Error processing tasks for ${email}:`, error)
       }
     }
 
     const successCount = results.length
-    console.log(`Completed cron job. Sent ${successCount} emails`)
+    console.log(`[${timestamp}] Completed cron job. Sent ${successCount} emails`)
 
+    // Add response headers for debugging
     return NextResponse.json({
       success: true,
+      timestamp,
       emailsSent: successCount
+    }, {
+      headers: {
+        'x-cron-execution-time': timestamp
+      }
     })
 
   } catch (error) {
-    console.error('Fatal cron error:', error)
+    console.error(`[${timestamp}] Fatal error:`, error)
     return NextResponse.json({ 
       error: 'Internal Server Error',
+      timestamp,
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
