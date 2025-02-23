@@ -13,24 +13,22 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function GET(request: Request) {
   console.log('Cron endpoint hit:', new Date().toISOString())
+
+  // Check for Vercel's proxy signature
+  const proxySignature = request.headers.get('x-vercel-proxy-signature')
   
-  // Log all headers for debugging
-  const headers = Object.fromEntries(request.headers.entries())
-  console.log('Request headers:', headers)
+  // Allow the request if it's either from Vercel cron or has our secret
+  const isVercelCron = !!proxySignature && proxySignature.startsWith('Bearer ')
+  const hasValidSecret = request.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET_KEY}`
 
-  // Check for Vercel Cron authentication
-  const cronSecret = request.headers.get('x-vercel-cron-secret')
-  console.log('Cron secret from header:', cronSecret)
-  console.log('Expected secret:', process.env.CRON_SECRET_KEY)
-
-  if (!cronSecret || cronSecret !== process.env.CRON_SECRET_KEY) {
-    console.error('Unauthorized: Invalid or missing cron secret')
+  if (!isVercelCron && !hasValidSecret) {
+    console.error('Unauthorized: Not a valid Vercel cron request or missing secret')
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
   try {
     // Log start of execution
-    console.log('Starting cron execution with auth:', !!cronSecret)
+    console.log('Starting cron execution with auth:', !!proxySignature || !!hasValidSecret)
 
     // Get active users
     const { data: users, error: userError } = await supabase
