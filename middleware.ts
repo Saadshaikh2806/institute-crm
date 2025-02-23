@@ -28,6 +28,11 @@ function startPeriodicEmails() {
 }
 
 export async function middleware(req: NextRequest) {
+  // Skip middleware completely for cron routes
+  if (req.nextUrl.pathname.startsWith('/api/cron/')) {
+    return NextResponse.next()
+  }
+
   if (process.env.NODE_ENV === 'development' && !hasInitialized) {
     hasInitialized = true;
     console.log('Development server started - initializing email triggers');
@@ -113,5 +118,8 @@ function redirectToLogin(req: NextRequest, error?: string) {
 }
 
 export const config = {
-  matcher: ['/((?!api/public|_next/static|_next/image|favicon.ico).*)', '/api/cron/:path*'],
+  matcher: [
+    // Exclude cron routes from middleware
+    '/((?!api/cron|api/public|_next/static|_next/image|favicon.ico).*)'
+  ]
 }
