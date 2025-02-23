@@ -11,54 +11,35 @@ import {
   Text,
 } from '@react-email/components';
 
-interface PendingTask {
-  title: string;
-  dueDate: string;
-  customerName?: string;
-}
-
 interface EmailTemplateProps {
   customerName: string;
   userName: string;
   daysWithoutContact: number;
-  pendingTasks: PendingTask[];
+  tasksList?: string; // Added for tasks
 }
 
 export const EmailTemplate: React.FC<EmailTemplateProps> = ({
   customerName,
   userName,
   daysWithoutContact,
-  pendingTasks
+  tasksList,
 }) => {
   return (
     <Html>
       <Head />
-      <Preview>CRM Daily Update: Leads and Tasks</Preview>
+      <Preview>Daily Tasks Reminder</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Daily CRM Update</Heading>
+          <Heading style={h1}>Daily Tasks Reminder</Heading>
           <Text style={text}>Hello {userName},</Text>
-          
-          {customerName && (
-            <Section>
-              <Text style={text}>
-                You have high-priority leads that need attention: <strong>{customerName}</strong>
-              </Text>
-            </Section>
-          )}
-
-          {pendingTasks.length > 0 && (
-            <Section>
-              <Text style={subheading}>Pending Tasks Due Soon:</Text>
-              {pendingTasks.map((task, index) => (
-                <Text key={index} style={taskStyle}>
-                  • {task.title} {task.customerName ? `(${task.customerName})` : ''}<br />
-                  <span style={dateStyle}>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-                </Text>
-              ))}
-            </Section>
-          )}
-
+          <Text style={text}>
+            You have the following tasks due today:
+          </Text>
+          <Section style={taskContainer}>
+            <Text style={taskText}>
+              {tasksList}
+            </Text>
+          </Section>
           <Hr style={hr} />
           <Text style={footer}>ADCI CRM System</Text>
         </Container>
@@ -107,21 +88,17 @@ const footer = {
   fontSize: '12px',
 };
 
-const subheading = {
+const taskContainer = {
+  backgroundColor: '#f9fafb',
+  padding: '20px',
+  borderRadius: '5px',
+  margin: '20px 0',
+};
+
+const taskText = {
   color: '#333',
-  fontSize: '18px',
-  fontWeight: 'bold',
-  marginTop: '20px',
-};
-
-const taskStyle = {
-  color: '#444',
   fontSize: '14px',
-  marginBottom: '8px',
-};
-
-const dateStyle = {
-  color: '#666',
-  fontSize: '12px',
-  marginLeft: '15px',
+  lineHeight: '24px',
+  fontFamily: 'monospace',
+  whiteSpace: 'pre-wrap',
 };
