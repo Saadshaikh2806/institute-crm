@@ -33,24 +33,25 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function GET(request: Request) {
-  // Add timestamp to all logs for debugging
   const timestamp = new Date().toISOString()
   console.log(`[${timestamp}] Cron endpoint hit`)
   
   try {
-    // Log all headers for debugging
+    // Log headers for debugging
     console.log(`[${timestamp}] Request headers:`, Object.fromEntries(request.headers.entries()))
     
-    // Verify either Vercel cron or manual authorization
-    const proxySignature = request.headers.get('x-vercel-cron') // Changed from x-vercel-proxy-signature
-    const authHeader = request.headers.get('authorization')
+    // Check for Vercel's deployment URL to verify it's a legitimate cron request
+    const deploymentUrl = request.headers.get('x-vercel-deployment-url')
+    const isVercelRequest = !!deploymentUrl && 
+      request.headers.get('user-agent')?.includes('vercel-cron')
     
-    const isVercelCron = !!proxySignature
+    // Allow requests from Vercel cron or with our secret
+    const authHeader = request.headers.get('authorization')
     const hasValidAuth = authHeader === `Bearer ${process.env.CRON_SECRET_KEY}`
     
-    console.log(`[${timestamp}] Auth check:`, { isVercelCron, hasValidAuth })
+    console.log(`[${timestamp}] Auth check:`, { isVercelRequest, hasValidAuth })
 
-    if (!isVercelCron && !hasValidAuth) {
+    if (!isVercelRequest && !hasValidAuth) {
       console.log(`[${timestamp}] Unauthorized request`)
       return new NextResponse('Unauthorized', { status: 401 })
     }
