@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase"
 interface User {
   id: string
   email: string
-  username: string
+  full_name: string
   role: "admin" | "user"
   is_active: boolean
   created_at: string
@@ -52,7 +52,7 @@ export function UserManagement() {
         .insert([
           { 
             email: newUserEmail,
-            username: newUsername,
+            full_name: newUsername,
             role: 'user'
           }
         ])
@@ -129,7 +129,7 @@ export function UserManagement() {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell>{user.username}</TableCell>
+                <TableCell>{user.full_name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell className="capitalize">{user.role}</TableCell>
                 <TableCell>
