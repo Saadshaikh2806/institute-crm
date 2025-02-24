@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase"
 interface User {
   id: string
   email: string
-  full_name: string  // Changed from username
+  full_name: string
   role: "admin" | "user"
   is_active: boolean
   created_at: string
@@ -21,7 +21,7 @@ interface User {
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [newUserEmail, setNewUserEmail] = useState("")
-  const [newFullName, setNewFullName] = useState("")  // Changed from newUsername
+  const [newUsername, setNewUsername] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export function UserManagement() {
         .insert([
           { 
             email: newUserEmail,
-            full_name: newFullName,  // Changed from username
+            full_name: newUsername,
             role: 'user'
           }
         ])
@@ -61,7 +61,7 @@ export function UserManagement() {
 
       toast.success("User added successfully")
       setNewUserEmail("")
-      setNewFullName("")  // Changed from setNewUsername
+      setNewUsername("")
       fetchUsers()
     } catch (error) {
       console.error('Error:', error)
@@ -95,9 +95,9 @@ export function UserManagement() {
         <form onSubmit={addUser} className="flex gap-4">
           <Input
             type="text"
-            placeholder="Enter full name"  // Changed placeholder
-            value={newFullName}  // Changed from newUsername
-            onChange={(e) => setNewFullName(e.target.value)}  // Changed from setNewUsername
+            placeholder="Enter username"
+            value={newUsername}
+            onChange={(e) => setNewUsername(e.target.value)}
             className="max-w-md"
           />
           <Input
@@ -118,7 +118,7 @@ export function UserManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Full Name</TableHead>  // Changed from Username
+              <TableHead>Username</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
@@ -129,7 +129,7 @@ export function UserManagement() {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell>{user.full_name}</TableCell>  // Changed from username
+                <TableCell>{user.full_name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell className="capitalize">{user.role}</TableCell>
                 <TableCell>
