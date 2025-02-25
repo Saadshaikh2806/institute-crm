@@ -1,6 +1,5 @@
 import { create } from "zustand"
 import type { Customer, Interaction, Task, Tag } from "@/types/crm"
-import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 

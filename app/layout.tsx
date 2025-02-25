@@ -8,6 +8,13 @@ import { Toaster } from "sonner"
 export const metadata: Metadata = {
   title: 'ADCI CRM',
   description: 'Institute CRM System',
+  themeColor: '#4f46e5',
+  manifest: '/manifest.json',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1
+  }
 }
 
 export default async function RootLayout({
