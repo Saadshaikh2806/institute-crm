@@ -61,10 +61,17 @@ export function downloadCSV(data: any[], filename: string) {
   document.body.removeChild(link)
 }
 
-export function isInstalledPWA() {
-  if (typeof window === 'undefined') return false;
+export function isInstalledPWA(): boolean {
+  if (typeof window === 'undefined') return false
   
   // Check if the app is running in standalone mode (installed PWA)
-  return window.matchMedia('(display-mode: standalone)').matches || 
-         window.navigator.standalone === true; // For iOS
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || (window.navigator as any).standalone === true
+    || document.referrer.includes('android-app://')
+  
+  // Check for PWA display mode
+  const isPWADisplayMode = window.matchMedia('(display-mode: fullscreen)').matches
+    || window.matchMedia('(display-mode: minimal-ui)').matches
+  
+  return isStandalone || isPWADisplayMode
 }

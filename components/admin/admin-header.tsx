@@ -14,9 +14,22 @@ export function AdminHeader() {
   const supabase = createClientComponentClient()
   const [isPWA, setIsPWA] = useState(false)
   
-  // Check if app is running as PWA on component mount
+  // Update the useEffect for PWA detection
   useEffect(() => {
-    setIsPWA(isInstalledPWA())
+    // Check if app is running as PWA on component mount
+    const checkPWA = () => {
+      setIsPWA(isInstalledPWA())
+    }
+    
+    // Initial check
+    checkPWA()
+    
+    // Also listen for display mode changes
+    const mediaQuery = window.matchMedia('(display-mode: standalone)')
+    const handleChange = (e: MediaQueryListEvent) => checkPWA()
+    
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
   const handleSignOut = async () => {

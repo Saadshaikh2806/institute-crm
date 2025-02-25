@@ -38,9 +38,22 @@ export function CustomerDashboard() {
   // Add state to track if app is running as installed PWA
   const [isPWA, setIsPWA] = useState(false)
 
-  // Check if app is running as PWA on component mount
+  // Update the useEffect for PWA detection
   useEffect(() => {
-    setIsPWA(isInstalledPWA())
+    // Check if app is running as PWA on component mount
+    const checkPWA = () => {
+      setIsPWA(isInstalledPWA())
+    }
+    
+    // Initial check
+    checkPWA()
+    
+    // Also listen for display mode changes
+    const mediaQuery = window.matchMedia('(display-mode: standalone)')
+    const handleChange = (e: MediaQueryListEvent) => checkPWA()
+    
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
   useEffect(() => {
@@ -182,6 +195,10 @@ export function CustomerDashboard() {
       setIsSigningOut(false)
     }
   }
+
+  useEffect(() => {
+    console.log('PWA status:', isPWA)
+  }, [isPWA])
 
   return (
     <div className="p-3 sm:p-6 space-y-6">
