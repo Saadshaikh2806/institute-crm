@@ -4,7 +4,7 @@ import { Eye, Trash2, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CustomerDetailsDialog } from "@/components/customer-details-dialog"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useCRMStore } from "@/store/crm-store"
 import { toast } from "sonner"
 import type { Customer } from "@/types/crm"
@@ -25,6 +25,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
   const tags = useCRMStore((state) => state.tags)
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null)
   const { deleteCustomer } = useCRMStore()
+  const tableContainerRef = useRef<HTMLDivElement>(null)
 
   const filteredCustomers = customers.filter((customer) => {
     if (!searchQuery.trim()) return true
@@ -131,7 +132,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
   }
 
   return (
-    <div className="rounded-lg border bg-gradient-to-b from-white to-gray-50/50 p-6 shadow-sm">
+    <div ref={tableContainerRef} className="rounded-lg border bg-gradient-to-b from-white to-gray-50/50 p-6 shadow-sm">
       <div className="mb-6 flex justify-between items-start space-y-2">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold tracking-tight">Customers</h2>

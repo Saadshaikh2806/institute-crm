@@ -124,12 +124,28 @@ export function CustomerDashboard() {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement
       
+      // Don't reset if clicking the search input
+      if (searchInputRef.current?.contains(target)) {
+        return
+      }
+
       // Don't reset if clicking download button or its children
       if (target.closest('[data-download-button]')) {
         return
       }
 
-      if (searchInputRef.current && !searchInputRef.current.contains(target)) {
+      // Don't reset if clicking any button or interactive element in the table
+      if (target.closest('button') || target.closest('a') || target.closest('input')) {
+        return
+      }
+
+      // Don't reset if clicking inside the table body
+      if (target.closest('tbody') || target.closest('td')) {
+        return
+      }
+
+      // Only reset if clicking completely outside
+      if (!target.closest('[data-customer-table]')) {
         setSearchQuery("")
       }
     }
@@ -286,7 +302,8 @@ export function CustomerDashboard() {
           />
           <CustomerTable 
             searchQuery={searchQuery} 
-            downloadButtonProps={{ "data-download-button": true } as const} 
+            downloadButtonProps={{ "data-download-button": true } as const}
+            data-customer-table // Add this attribute
           />
         </div>
       </div>
