@@ -7,18 +7,20 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Customer Relationship Management for Institutes',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#4f46e5',
+    background_color: '#303030',
+    theme_color: '#303030',
     icons: [
       {
         src: '/icons/icon-192x192.png',
         sizes: '192x192',
-        type: 'image/png'
+        type: 'image/png',
+        purpose: 'maskable'
       },
       {
         src: '/icons/icon-512x512.png',
         sizes: '512x512',
-        type: 'image/png'
+        type: 'image/png',
+        purpose: 'maskable'
       }
     ]
   }
