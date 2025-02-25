@@ -19,6 +19,7 @@ export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClientComponentClient()
+  const [errorDisplayed, setErrorDisplayed] = useState(false)
 
   // Load last attempt from localStorage and set initial countdown
   useEffect(() => {
@@ -30,7 +31,6 @@ export function LoginForm() {
       setCountdown(Math.ceil(remaining / 1000))
     }
   }, [])
-
 
   useEffect(() => {
     if (countdown <= 0) return
@@ -55,25 +55,39 @@ export function LoginForm() {
     const remaining = Math.max(0, RATE_LIMIT_DURATION - elapsed)
     return remaining
   }
-  // Show error messages if any
-  const error = searchParams?.get('error')
-  if (error === 'auth') {
-    toast.error("Authentication failed. Please try again.")
-  } else if (error === 'callback') {
-    toast.error("Login process failed. Please try again.")
-  } else if (error === 'no_access') {
-    toast.error("You don't have access to the CRM. Please contact your administrator.")
-  } else if (error === 'no_user') {
-    toast.error("User not found. Please try again.")
-  } else if (error === 'inactive') {
-    toast.error("Your account is inactive. Please contact your administrator.")
-  } else if (error === 'no_code') {
-    toast.error("Invalid login link. Please try again.")
-  } else if (error === 'invalid_token') {
-    toast.error("Invalid authentication token. Please try logging in again.")
-  } else if (error === 'admin_required') {
-    toast.error("You need administrator access for this area. Please login with an admin account.")
-  }
+
+  // Show error messages if any, but only once
+  useEffect(() => {
+    const error = searchParams?.get('error')
+    
+    if (error && !errorDisplayed) {
+      setErrorDisplayed(true)
+      
+      if (error === 'auth') {
+        toast.error("Authentication failed. Please try again.")
+      } else if (error === 'callback') {
+        toast.error("Login process failed. Please try again.")
+      } else if (error === 'no_access') {
+        toast.error("You don't have access to the CRM. Please contact your administrator.")
+      } else if (error === 'no_user') {
+        toast.error("User not found. Please try again.")
+      } else if (error === 'inactive') {
+        toast.error("Your account is inactive. Please contact your administrator.")
+      } else if (error === 'no_code') {
+        toast.error("Invalid login link. Please try again.")
+      } else if (error === 'invalid_token') {
+        toast.error("Invalid authentication token. Please try logging in again.")
+      } else if (error === 'admin_required') {
+        toast.error("You need administrator access for this area. Please login with an admin account.")
+      }
+      
+      // Clear the error from URL without refreshing the page
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('error')
+      window.history.replaceState({}, '', newUrl.toString())
+    }
+  }, [searchParams, errorDisplayed])
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -136,22 +150,32 @@ export function LoginForm() {
 
       if (otpError) {
         console.error('OTP error:', otpError)
+        
+        // Store the attempt timestamp and set countdown regardless of error type
+        const now = Date.now()
+        localStorage.setItem('lastLoginAttempt', now.toString())
+        setLastAttempt(now)
+        
         if (otpError.message.includes('rate limit')) {
-          toast.error("Too many login attempts. Please wait a minute before trying again.")
+          // Set a longer countdown for rate limit errors (3 minutes)
+          setCountdown(180)
+          toast.error("Rate limit reached. Please wait 3 minutes before trying again.")
         } else {
-          toast.error("Failed to send login link. Please try again.")
+          // Regular cooldown for other errors
+          setCountdown(RATE_LIMIT_DURATION / 1000)
+          toast.error("Failed to send login link. Please try again later.")
         }
         return
       }
 
-       // Store the attempt timestamp and set countdown
+      console.log('Magic link sent successfully')
+      toast.success("Magic link sent to your email!")
+
+      // Set a cooldown even on success to prevent spam
       const now = Date.now()
       localStorage.setItem('lastLoginAttempt', now.toString())
       setLastAttempt(now)
-      setCountdown(RATE_LIMIT_DURATION / 1000)
-
-      console.log('Magic link sent successfully')
-      toast.success("Magic link sent to your email!")
+      setCountdown(30) // 30 second cooldown even on success
 
     } catch (error: any) {
       console.error('Login error:', error)
@@ -208,6 +232,11 @@ export function LoginForm() {
               ? `Wait ${countdown}s` 
               : 'Sign In with Email'}
           </Button>
+          {!isRateLimited && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Limited to 3 login attempts per hour
+            </p>
+          )}
         </div>
       </form>
     </div>
