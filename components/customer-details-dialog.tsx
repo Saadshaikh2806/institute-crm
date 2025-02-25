@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { X, CalendarIcon, Trash2 } from "lucide-react"
+import { X, CalendarIcon, Trash2, Phone } from "lucide-react" // Add Phone to imports
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -307,7 +307,17 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                         onChange={(e) => setEditedDetails(prev => ({ ...prev, phone: e.target.value }))}
                       />
                     ) : (
-                      <p className="text-sm text-gray-600">{customer?.phone}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-600">{customer?.phone}</p>
+                        {customer?.phone && (
+                          <a
+                            href={`tel:${customer.phone}`}
+                            className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                          >
+                            <Phone className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2">
