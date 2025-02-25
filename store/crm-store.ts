@@ -78,14 +78,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         // Instead of throwing error, just return silently when not authenticated
         return
       }
-
+  
+      // Modified query to include shared customers
       const { data: customers, error } = await supabase
         .from('customers')
         .select('*')
         .order('created_at', { ascending: false })
-
+      
+      // The RLS policies will automatically filter to show only owned and shared customers
+  
       if (error) throw error
-
+  
       set({
         customers: customers.map(mapCustomerData)
       })

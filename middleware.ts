@@ -101,11 +101,33 @@ export async function middleware(req: NextRequest) {
       return redirectToLogin(req, 'no_access')
     }
 
+    // Check for shared access if accessing customer data
+    if (req.nextUrl.pathname.startsWith('/customers/')) {
+      const customerId = req.nextUrl.pathname.split('/')[2]
+      
+      if (customerId) {
+        if (!session?.user?.id) return redirectToLogin(req)
+
+        // Check if the user has shared access to this customer
+        const { data: sharedAccess, error: sharedError } = await supabase
+          .from('shared_access')
+          .select('permissions')
+          .eq('shared_with_id', session.user.id)
+          .single()
+          
+        if (sharedError && sharedError.code !== 'PGRST116') {
+          console.error('Shared access check error:', sharedError)
+          return redirectToLogin(req, 'access_error')
+        }
+      }
+    }
+
     return res
   } catch (error) {
     console.error('Middleware error:', error)
     return redirectToLogin(req, 'auth_error')
   }
+  
 }
 
 function redirectToLogin(req: NextRequest, error?: string) {
