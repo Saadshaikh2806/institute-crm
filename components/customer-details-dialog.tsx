@@ -266,9 +266,20 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                     </Button>
                   </>
                 ) : (
-                  <Button onClick={() => setIsEditing(true)} variant="outline" className="hover:bg-gray-100">
-                    Edit Details
-                  </Button>
+                  <>
+                    <Button onClick={() => setIsEditing(true)} variant="outline" className="hover:bg-gray-100">
+                      Edit Details
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onOpenChange(false)} 
+                      className="ml-2 hover:bg-gray-100"
+                      aria-label="Close dialog"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </>
                 )}
               </div>
             </DialogTitle>
