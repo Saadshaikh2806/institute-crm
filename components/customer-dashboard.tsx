@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { Users, UserPlus, Activity, Flame, LogOut, Instagram, Linkedin } from "lucide-react"
+import { Users, UserPlus, Activity, Flame, LogOut, Instagram, Linkedin, CheckSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CustomerTable } from "@/components/customer-table"
@@ -16,10 +16,13 @@ import { useAuth } from "@/components/auth/auth-provider"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { CustomerDetailsDialog } from "@/components/customer-details-dialog"
+import { DueTasksList } from "./due-tasks-list"
 
 export function CustomerDashboard() {
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
   const [showHotLeads, setShowHotLeads] = useState(false)
+  const [showDueTasks, setShowDueTasks] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { 
@@ -27,7 +30,8 @@ export function CustomerDashboard() {
     fetchCustomers,
     fetchAllInteractions,
     fetchAllTasks,
-    fetchAllTags 
+    fetchAllTags,
+    tasks
   } = useCRMStore()
   const supabase = createClientComponentClient()
   const { session } = useAuth()
@@ -37,6 +41,20 @@ export function CustomerDashboard() {
   const [fullName, setFullName] = useState("")  // Changed from username
   // Add state to track if app is running as installed PWA
   const [isPWA, setIsPWA] = useState(false)
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    try {
+      await supabase.auth.signOut()
+      router.push('/login')
+      toast.success('Signed out successfully')
+    } catch (error) {
+      console.error('Error signing out:', error)
+      toast.error('Failed to sign out')
+    } finally {
+      setIsSigningOut(false)
+    }
+  }
 
   // Update the useEffect for PWA detection
   useEffect(() => {
@@ -104,7 +122,19 @@ export function CustomerDashboard() {
   const newLeads = customers.filter((c) => 
     c.status === "lead" && isWithinLast30Days(c.createdAt)
   ).length
-  const activeCustomers = customers.filter((c) => c.status === "active").length
+  
+  // Calculate due tasks (not completed and due date is today or earlier)
+  const dueTasks = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    return tasks.filter((task) => {
+      if (task.completed) return false
+      const taskDate = new Date(task.dueDate)
+      taskDate.setHours(0, 0, 0, 0)
+      return taskDate <= today
+    })
+  }, [tasks])
   
   // Update hot leads calculation
   const hotLeads = useMemo(() => {
@@ -138,67 +168,6 @@ export function CustomerDashboard() {
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers, session?.user?.id]);
-
-  // Update click outside handler
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as HTMLElement
-      
-      // Don't reset if clicking the search input
-      if (searchInputRef.current?.contains(target)) {
-        return
-      }
-
-      // Don't reset if clicking download button or its children
-      if (target.closest('[data-download-button]')) {
-        return
-      }
-
-      // Don't reset if clicking any button or interactive element in the table
-      if (target.closest('button') || target.closest('a') || target.closest('input')) {
-        return
-      }
-
-      // Don't reset if clicking inside the table body
-      if (target.closest('tbody') || target.closest('td')) {
-        return
-      }
-
-      // Only reset if clicking completely outside
-      if (!target.closest('[data-customer-table]')) {
-        setSearchQuery("")
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
-
-  const handleSignOut = async () => {
-    setIsSigningOut(true)
-    try {
-      // Clear the store data first
-      useCRMStore.getState().clearStore()
-      
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      
-      router.push('/login')
-      router.refresh() // Force a router refresh
-      toast.success("Signed out successfully")
-    } catch (error) {
-      console.error('Error signing out:', error)
-      toast.error("Error signing out")
-    } finally {
-      setIsSigningOut(false)
-    }
-  }
-
-  useEffect(() => {
-    console.log('PWA status:', isPWA)
-  }, [isPWA])
 
   return (
     <div className="p-3 sm:p-6 space-y-6">
@@ -283,13 +252,27 @@ export function CustomerDashboard() {
             <div className="text-2xl font-bold">{newLeads}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className={cn(
+            "bg-blue-50 transition-all duration-300 cursor-pointer hover:ring-2 hover:ring-blue-200",
+            dueTasks.length > 0 && "bg-blue-100 ring-2 ring-blue-500"
+          )}
+          onClick={() => setShowDueTasks(!showDueTasks)}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Due Tasks</CardTitle>
+            <CheckSquare className={cn(
+              "h-4 w-4 text-blue-500",
+              dueTasks.length > 0 && "animate-pulse"
+            )} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeCustomers}</div>
+            <div className={cn(
+              "text-2xl font-bold",
+              dueTasks.length > 0 ? "text-blue-500" : "text-gray-500"
+            )}>
+              {dueTasks.length}
+            </div>
           </CardContent>
         </Card>
         <Card 
@@ -319,6 +302,7 @@ export function CustomerDashboard() {
 
       <div className="space-y-6">
         {showHotLeads && <HotLeadsList onClose={() => setShowHotLeads(false)} />}
+        {showDueTasks && <DueTasksList onClose={() => setShowDueTasks(false)} />}
         
         <div className="space-y-4">
           <Input
