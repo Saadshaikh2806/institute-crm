@@ -60,3 +60,11 @@ export function downloadCSV(data: any[], filename: string) {
   link.click()
   document.body.removeChild(link)
 }
+
+export function isInstalledPWA() {
+  if (typeof window === 'undefined') return false;
+  
+  // Check if the app is running in standalone mode (installed PWA)
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         window.navigator.standalone === true; // For iOS
+}

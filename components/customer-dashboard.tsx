@@ -8,7 +8,7 @@ import { CustomerTable } from "@/components/customer-table"
 import { AddCustomerDialog } from "@/components/add-customer-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCRMStore } from "@/store/crm-store"
-import { calculateLeadScore, isHotLead, isWithinLast30Days } from "@/lib/utils"
+import { calculateLeadScore, isHotLead, isWithinLast30Days, isInstalledPWA } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { HotLeadsList } from "@/components/hot-leads-list"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
@@ -35,6 +35,13 @@ export function CustomerDashboard() {
   const router = useRouter()
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [fullName, setFullName] = useState("")  // Changed from username
+  // Add state to track if app is running as installed PWA
+  const [isPWA, setIsPWA] = useState(false)
+
+  // Check if app is running as PWA on component mount
+  useEffect(() => {
+    setIsPWA(isInstalledPWA())
+  }, [])
 
   useEffect(() => {
     // Fetch all data when component mounts
@@ -221,19 +228,22 @@ export function CustomerDashboard() {
             <UserPlus className="mr-2 h-4 w-4" />
             Add Customer
           </Button>
-          <Button 
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={handleSignOut}
-            disabled={isSigningOut}
-          >
-            {isSigningOut ? (
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent" />
-            ) : (
-              <LogOut className="mr-2 h-4 w-4" />
-            )}
-            Sign Out
-          </Button>
+          {/* Only show sign out button if not running as installed PWA */}
+          {!isPWA && (
+            <Button 
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+            >
+              {isSigningOut ? (
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent" />
+              ) : (
+                <LogOut className="mr-2 h-4 w-4" />
+              )}
+              Sign Out
+            </Button>
+          )}
         </div>
       </div>
 

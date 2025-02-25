@@ -1,15 +1,23 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
-import { useCRMStore } from "@/store/crm-store" // Fix import path
+import { useCRMStore } from "@/store/crm-store"
+import { isInstalledPWA } from "@/lib/utils"
 
 export function AdminHeader() {
   const router = useRouter()
   const supabase = createClientComponentClient()
+  const [isPWA, setIsPWA] = useState(false)
+  
+  // Check if app is running as PWA on component mount
+  useEffect(() => {
+    setIsPWA(isInstalledPWA())
+  }, [])
 
   const handleSignOut = async () => {
     try {
@@ -33,14 +41,17 @@ export function AdminHeader() {
       <div className="flex h-16 items-center justify-between px-6">
         <h1 className="text-2xl font-semibold">Admin Panel</h1>
         
-        <Button 
-          variant="outline" 
-          onClick={handleSignOut}
-          className="gap-2"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </Button>
+        {/* Only show sign out button if not running as installed PWA */}
+        {!isPWA && (
+          <Button 
+            variant="outline" 
+            onClick={handleSignOut}
+            className="gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        )}
       </div>
     </div>
   )
