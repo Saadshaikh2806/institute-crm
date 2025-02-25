@@ -260,7 +260,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]" aria-describedby="add-customer-description">
+      <DialogContent className="w-[95vw] max-w-[425px] h-[90vh] sm:h-auto overflow-y-auto" aria-describedby="add-customer-description">
         <DialogHeader>
           <DialogTitle>Add Customer</DialogTitle>
           <p id="add-customer-description" className="text-sm text-muted-foreground">
@@ -351,11 +351,19 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <div className="flex flex-col sm:flex-row justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => onOpenChange(false)}
+                  className="w-full sm:w-auto"
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto"
+                >
                   {isSubmitting ? 'Adding...' : 'Add Customer'}
                 </Button>
               </div>

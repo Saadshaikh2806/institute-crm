@@ -177,16 +177,16 @@ export function CustomerDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex flex-col">
+    <div className="p-3 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col w-full sm:w-auto">
           <h1 className="text-2xl font-bold">ADCI CRM</h1>
-          <h2 className="text-3xl font-bold mt-2 text-primary">
-            Welcome, {fullName || 'User'}  {/* Changed from username */}
+          <h2 className="text-3xl font-bold mt-2 text-primary truncate">
+            Welcome, {fullName || 'User'}
           </h2>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
             <span>Developed by Saad Shaikh</span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <a 
                 href="https://www.instagram.com/saad__shaikh___" 
                 target="_blank" 
@@ -209,20 +209,21 @@ export function CustomerDashboard() {
             </div>
           </div>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {isAdmin && (
-            <Link href="/admin">
-              <Button variant="outline">
+            <Link href="/admin" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto">
                 Admin Panel
               </Button>
             </Link>
           )}
-          <Button onClick={() => setIsAddCustomerOpen(true)}>
+          <Button className="w-full sm:w-auto" onClick={() => setIsAddCustomerOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Add Customer
           </Button>
           <Button 
-            variant="outline" 
+            variant="outline"
+            className="w-full sm:w-auto"
             onClick={handleSignOut}
             disabled={isSigningOut}
           >
@@ -236,7 +237,7 @@ export function CustomerDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
@@ -298,7 +299,7 @@ export function CustomerDashboard() {
             placeholder="Search customers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-md"
+            className="w-full max-w-full sm:max-w-md"
           />
           <CustomerTable 
             searchQuery={searchQuery} 

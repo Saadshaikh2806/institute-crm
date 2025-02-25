@@ -240,7 +240,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] lg:max-w-[85vw] xl:max-w-7xl max-h-[90vh] p-0 bg-gradient-to-b from-white to-gray-50/50 flex flex-col">
+      <DialogContent className="max-w-[95vw] w-full h-[90vh] lg:max-w-[85vw] xl:max-w-7xl p-0 flex flex-col overflow-hidden">
         <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 py-4 flex-shrink-0">
           <DialogHeader className="space-y-4">
             <DialogTitle className="flex justify-between items-center">
