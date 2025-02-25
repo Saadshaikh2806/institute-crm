@@ -232,11 +232,7 @@ export function LoginForm() {
               ? `Wait ${countdown}s` 
               : 'Sign In with Email'}
           </Button>
-          {!isRateLimited && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Limited to 3 login attempts per hour
-            </p>
-          )}
+          {/* Removing the rate limit message */}
         </div>
       </form>
     </div>
