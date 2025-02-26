@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${requestUrl.origin}/login?error=no_user`)
       }
 
-      // Get the user's role
+      // Get the user's role and active status
       const { data: user, error: userError } = await supabase
         .from('crm_users')
         .select('role, is_active')
@@ -38,6 +38,7 @@ export async function GET(request: Request) {
 
       // Check if user is active
       if (!user.is_active) {
+        await supabase.auth.signOut()
         return NextResponse.redirect(`${requestUrl.origin}/login?error=inactive`)
       }
 
@@ -47,12 +48,9 @@ export async function GET(request: Request) {
         .update({ last_login: new Date().toISOString() })
         .eq('email', session.user.email)
 
-      // Redirect based on role
-      if (user.role === 'admin') {
-        return NextResponse.redirect(`${requestUrl.origin}/admin`)
-      } else {
-        return NextResponse.redirect(`${requestUrl.origin}/`)
-      }
+      // Always redirect admin to admin panel, regular users to dashboard
+      const redirectPath = user.role === 'admin' ? '/admin' : '/'
+      return NextResponse.redirect(`${requestUrl.origin}${redirectPath}`)
     } catch (error) {
       console.error('Callback error:', error)
       return NextResponse.redirect(`${requestUrl.origin}/login?error=callback`)
@@ -60,4 +58,4 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(`${requestUrl.origin}/login?error=no_code`)
-} 
+}

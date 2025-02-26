@@ -119,6 +119,26 @@ export function CustomerDashboard() {
     fetchUserDetails()
   }, [session, supabase])
 
+  // Remove the isAdmin check since admins shouldn't see this page
+  useEffect(() => {
+    async function checkAccess() {
+      if (!session?.user?.email) return
+      
+      const { data } = await supabase
+        .from('crm_users')
+        .select('role')
+        .eq('email', session.user.email)
+        .single()
+        
+      // If user is admin, redirect to admin panel
+      if (data?.role === 'admin') {
+        router.push('/admin')
+      }
+    }
+    
+    checkAccess()
+  }, [session, supabase, router])
+
   const totalCustomers = customers.length
   const newLeads = customers.filter((c) => 
     c.status === "lead" && isWithinLast30Days(c.createdAt)
@@ -229,13 +249,6 @@ export function CustomerDashboard() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {isAdmin && (
-            <Link href="/admin" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full sm:w-auto">
-                Admin Panel
-              </Button>
-            </Link>
-          )}
           <Button className="w-full sm:w-auto" onClick={() => setIsAddCustomerOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Add Customer

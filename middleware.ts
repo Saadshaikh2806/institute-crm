@@ -72,29 +72,47 @@ export async function middleware(req: NextRequest) {
       return redirectToLogin(req)
     }
 
-    // Admin route protection
-    if (req.nextUrl.pathname.startsWith('/admin')) {
-      const { data: user, error: userError } = await supabase
-        .from('crm_users')
-        .select('role')
-        .eq('email', session.user.email)
-        .single()
+    // Get user role first since we'll need it for multiple checks
+    const { data: userData, error: userRoleError } = await supabase
+      .from('crm_users')
+      .select('role, is_active')
+      .eq('email', session.user.email)
+      .single()
 
-      if (userError) throw userError
+    if (userRoleError) throw userRoleError
 
-      if (!user || user.role !== 'admin') {
-        return redirectToLogin(req, 'admin_required')
-      }
+    if (!userData || !userData.is_active) {
+      await supabase.auth.signOut()
+      return redirectToLogin(req, 'no_access')
+    }
+
+    // Admin route protection - updated logic
+    const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
+    const isAdminUser = userData.role === 'admin'
+
+    // If user is admin and tries to access dashboard, redirect to admin
+    if (isAdminUser && req.nextUrl.pathname === '/') {
+      return NextResponse.redirect(new URL('/admin', req.url))
+    }
+
+    // If non-admin tries to access admin routes, redirect to dashboard
+    if (isAdminRoute && !isAdminUser) {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+
+    // If admin tries to access non-admin routes (except API routes), redirect to admin
+    if (isAdminUser && !isAdminRoute && !req.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.redirect(new URL('/admin', req.url))
     }
 
     // Check user access
-    const { data: user, error: userError } = await supabase
+    const { data: user, error: userAccessError } = await supabase
       .from('crm_users')
       .select('is_active')
       .eq('email', session.user.email)
       .single()
 
-    if (userError) throw userError
+    if (userAccessError) throw userAccessError
 
     if (!user || !user.is_active) {
       await supabase.auth.signOut()
