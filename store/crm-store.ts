@@ -348,9 +348,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           createdAt: data[0].created_at
         }
 
+        // Update tasks state immediately and fetch all tasks to ensure consistency
         set((state) => ({
           tasks: [...state.tasks, newTask]
         }))
+        
+        // Fetch all tasks to ensure state is in sync
+        await get().fetchAllTasks()
 
         toast.success('Task added successfully')
       }
@@ -608,7 +612,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user?.id) {
-        throw new Error('Not authenticated')
+        return // Silent return if not authenticated
       }
 
       const { data, error } = await supabase
@@ -618,17 +622,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       if (error) throw error
 
-      set({ 
-        tasks: data.map(task => ({
-          id: task.id,
-          customerId: task.customer_id,
-          userId: task.user_id,
-          title: task.title,
-          completed: task.completed,
-          dueDate: task.duedate,
-          createdAt: task.created_at
-        }))
-      })
+      const formattedTasks = data.map(task => ({
+        id: task.id,
+        customerId: task.customer_id,
+        userId: task.user_id,
+        title: task.title,
+        completed: task.completed,
+        dueDate: task.duedate,
+        createdAt: task.created_at
+      }))
+
+      set({ tasks: formattedTasks })
     } catch (error) {
       console.error('Error fetching tasks:', error)
     }

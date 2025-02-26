@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { CustomerDetailsDialog } from "@/components/customer-details-dialog"
 import { DueTasksList } from "./due-tasks-list"
+import type { Task } from "@/types/crm"  // Add this import at the top with other imports
 
 export function CustomerDashboard() {
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
@@ -123,19 +124,23 @@ export function CustomerDashboard() {
     c.status === "lead" && isWithinLast30Days(c.createdAt)
   ).length
   
-  // Calculate due tasks (not completed and due date is today or earlier)
-  const dueTasks = useMemo(() => {
+  // Move the dueTasks calculation into a useEffect to ensure it updates when tasks change
+  const [dueTasks, setDueTasks] = useState<Task[]>([])
+
+  useEffect(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
-    return tasks.filter((task) => {
+    const filteredTasks = tasks.filter((task) => {
       if (task.completed) return false
       const taskDate = new Date(task.dueDate)
       taskDate.setHours(0, 0, 0, 0)
       return taskDate <= today
     })
+    
+    setDueTasks(filteredTasks)
   }, [tasks])
-  
+
   // Update hot leads calculation
   const hotLeads = useMemo(() => {
     return customers.filter((c) => {
@@ -168,6 +173,27 @@ export function CustomerDashboard() {
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers, session?.user?.id]);
+
+  // Update the initial data fetching to handle tasks specifically
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      await fetchAllTasks() // Fetch tasks first
+      await Promise.all([
+        fetchCustomers(),
+        fetchAllInteractions(),
+        fetchAllTags()
+      ])
+    }
+
+    fetchInitialData()
+    
+    // Set up an interval to refresh tasks periodically
+    const interval = setInterval(() => {
+      fetchAllTasks()
+    }, 30000) // Refresh every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [fetchCustomers, fetchAllInteractions, fetchAllTasks, fetchAllTags])
 
   return (
     <div className="p-3 sm:p-6 space-y-6">
