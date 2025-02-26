@@ -30,6 +30,12 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#303030" />
+        <link rel="icon" sizes="192x192" href="/icons/icon-192x192.png" />
+        <link rel="icon" sizes="512x512" href="/icons/icon-512x512.png" />
+      </head>
       <body>
         <AuthProvider initialSession={session}>
           {children}
