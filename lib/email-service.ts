@@ -1,11 +1,13 @@
 import { Resend } from 'resend';
 import { DailyTasksEmail } from '@/emails/daily-tasks-email';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 export const EMAIL_CONFIG = {
-  cooldownPeriod: process.env.EMAIL_COOLDOWN_PERIOD 
-    ? parseInt(process.env.EMAIL_COOLDOWN_PERIOD) 
+  cooldownPeriod: process.env.EMAIL_COOLDOWN_PERIOD
+    ? parseInt(process.env.EMAIL_COOLDOWN_PERIOD)
     : 20,
   testMode: false,
   testEmail: process.env.TEST_EMAIL || 'adci.exam@gmail.com',
@@ -13,8 +15,13 @@ export const EMAIL_CONFIG = {
 };
 
 export async function sendDailyTasksEmail(to: string, data: any) {
+  if (!resend) {
+    console.log('Email service skipped: No RESEND_API_KEY configured');
+    return { success: true, skipped: true };
+  }
+
   console.log('Attempting to send email to:', to);
-  
+
   try {
     const emailTo = EMAIL_CONFIG.testMode ? EMAIL_CONFIG.testEmail : to;
     const fromEmail = EMAIL_CONFIG.fromEmail;
@@ -25,12 +32,12 @@ export async function sendDailyTasksEmail(to: string, data: any) {
       from: fromEmail,
       to: [emailTo],
       subject: `Daily Tasks Summary - ${new Date().toLocaleDateString()}`,
-      react: DailyTasksEmail({ 
+      react: DailyTasksEmail({
         data,
-        originalRecipient: EMAIL_CONFIG.testMode ? to : undefined 
+        originalRecipient: EMAIL_CONFIG.testMode ? to : undefined
       })
     });
-    
+
     if (response.error) {
       throw new Error(`Email send failed: ${response.error.message}`);
     }

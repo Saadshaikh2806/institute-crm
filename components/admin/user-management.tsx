@@ -21,7 +21,8 @@ interface User {
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [newUserEmail, setNewUserEmail] = useState("")
-  const [newUsername, setNewUsername] = useState("")
+  const [newUserPassword, setNewUserPassword] = useState("")
+  const [newUserFullName, setNewUserFullName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -47,25 +48,48 @@ export function UserManagement() {
     setIsLoading(true)
 
     try {
-      const { error } = await supabase
+      // Step 1: Create auth user in Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+        options: {
+          data: {
+            full_name: newUserFullName
+          }
+        }
+      })
+
+      if (authError) throw authError
+      if (!authData.user) throw new Error("Failed to create user")
+
+      // Step 2: Create CRM user record linked to auth user
+      const { error: crmError } = await supabase
         .from('crm_users')
         .insert([
-          { 
+          {
+            auth_user_id: authData.user.id,
             email: newUserEmail,
-            full_name: newUsername,
-            role: 'user'
+            full_name: newUserFullName,
+            role: 'user',
+            is_active: true
           }
         ])
 
-      if (error) throw error
+      if (crmError) {
+        // If CRM user creation fails, we should ideally delete the auth user
+        // But for simplicity, we'll just show the error
+        console.error('CRM user creation failed:', crmError)
+        throw new Error('Failed to create CRM user record')
+      }
 
       toast.success("User added successfully")
       setNewUserEmail("")
-      setNewUsername("")
+      setNewUserPassword("")
+      setNewUserFullName("")
       fetchUsers()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error)
-      toast.error("Failed to add user")
+      toast.error(error.message || "Failed to add user")
     } finally {
       setIsLoading(false)
     }
@@ -95,20 +119,31 @@ export function UserManagement() {
         <form onSubmit={addUser} className="flex gap-4">
           <Input
             type="text"
-            placeholder="Enter username"
-            value={newUsername}
-            onChange={(e) => setNewUsername(e.target.value)}
+            placeholder="Full Name"
+            value={newUserFullName}
+            onChange={(e) => setNewUserFullName(e.target.value)}
             className="max-w-md"
+            required
           />
           <Input
             type="email"
-            placeholder="Enter email address"
+            placeholder="Email Address"
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
             className="max-w-md"
+            required
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={newUserPassword}
+            onChange={(e) => setNewUserPassword(e.target.value)}
+            className="max-w-md"
+            required
+            minLength={6}
           />
           <Button type="submit" disabled={isLoading}>
-            Add User
+            {isLoading ? "Adding..." : "Add User"}
           </Button>
         </form>
       </div>
@@ -118,7 +153,7 @@ export function UserManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Username</TableHead>
+              <TableHead>Full Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
@@ -139,7 +174,7 @@ export function UserManagement() {
                   />
                 </TableCell>
                 <TableCell>
-                  {user.last_login 
+                  {user.last_login
                     ? new Date(user.last_login).toLocaleDateString()
                     : 'Never'}
                 </TableCell>

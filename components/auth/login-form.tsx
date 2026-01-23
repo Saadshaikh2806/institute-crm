@@ -8,61 +8,22 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-const RATE_LIMIT_DURATION = 60 * 1000 // 60 seconds in milliseconds
-
 export function LoginForm() {
   const [email, setEmail] = useState("")
-  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [lastAttempt, setLastAttempt] = useState<number | null>(null)
-  const [countdown, setCountdown] = useState(0)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClientComponentClient()
   const [errorDisplayed, setErrorDisplayed] = useState(false)
 
-  // Load last attempt from localStorage and set initial countdown
-  useEffect(() => {
-    const stored = localStorage.getItem('lastLoginAttempt')
-    if (stored) {
-      const lastAttemptTime = parseInt(stored)
-      setLastAttempt(lastAttemptTime)
-      const remaining = Math.max(0, RATE_LIMIT_DURATION - (Date.now() - lastAttemptTime))
-      setCountdown(Math.ceil(remaining / 1000))
-    }
-  }, [])
-
-  useEffect(() => {
-    if (countdown <= 0) return
-
-    const timer = setInterval(() => {
-      setCountdown((current) => {
-        if (current <= 1) {
-          clearInterval(timer)
-          return 0
-        }
-        return current - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [countdown])
-
-  // Calculate remaining cooldown time
-  const getRemainingCooldown = () => {
-    if (!lastAttempt) return 0
-    const elapsed = Date.now() - lastAttempt
-    const remaining = Math.max(0, RATE_LIMIT_DURATION - elapsed)
-    return remaining
-  }
-
   // Show error messages if any, but only once
   useEffect(() => {
     const error = searchParams?.get('error')
-    
+
     if (error && !errorDisplayed) {
       setErrorDisplayed(true)
-      
+
       if (error === 'auth') {
         toast.error("Authentication failed. Please try again.")
       } else if (error === 'callback') {
@@ -73,14 +34,12 @@ export function LoginForm() {
         toast.error("User not found. Please try again.")
       } else if (error === 'inactive') {
         toast.error("Your account is inactive. Please contact your administrator.")
-      } else if (error === 'no_code') {
-        toast.error("Invalid login link. Please try again.")
       } else if (error === 'invalid_token') {
         toast.error("Invalid authentication token. Please try logging in again.")
       } else if (error === 'admin_required') {
         toast.error("You need administrator access for this area. Please login with an admin account.")
       }
-      
+
       // Clear the error from URL without refreshing the page
       const newUrl = new URL(window.location.href)
       newUrl.searchParams.delete('error')
@@ -90,30 +49,16 @@ export function LoginForm() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Check rate limit
-    const remainingCooldown = getRemainingCooldown()
-    if (remainingCooldown > 0) {
-      const secondsLeft = Math.ceil(remainingCooldown / 1000)
-      setCountdown(secondsLeft)
-      toast.error(`Please wait ${secondsLeft} seconds before trying again`)
-      return
-    }
-
     setIsLoading(true)
+
     const normalizedEmail = email.toLowerCase().trim()
-    const normalizedUsername = username.trim()
 
     try {
-      console.log('Checking user access for:', normalizedEmail)
-      
-      // Check for the specific user
+      // Check if user exists and is active in CRM
       const { data: users, error: userError } = await supabase
         .from('crm_users')
         .select('role, is_active, email, full_name')
         .eq('email', normalizedEmail)
-
-      console.log('User query result:', { users, userError, normalizedEmail })
 
       if (userError) {
         console.error('User lookup error:', userError)
@@ -123,93 +68,61 @@ export function LoginForm() {
 
       const user = users?.[0]
       if (!user) {
-        console.log('No user found for email:', normalizedEmail)
-        toast.error("Invalid username or email combination")
+        toast.error("Invalid email or password")
         return
       }
 
       if (!user.is_active) {
-        console.log('User is inactive:', normalizedEmail)
         toast.error("Your account is inactive. Please contact your administrator.")
         return
       }
 
-      console.log('Found user:', user)
-      console.log('Sending magic link to:', normalizedEmail)
-      
-      // Send magic link
-      const { data: otpData, error: otpError } = await supabase.auth.signInWithOtp({
+      // Attempt to sign in with password
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            role: user.role
-          }
-        },
+        password: password,
       })
 
-      if (otpError) {
-        console.error('OTP error:', otpError)
-        
-        // Store the attempt timestamp and set countdown regardless of error type
-        const now = Date.now()
-        localStorage.setItem('lastLoginAttempt', now.toString())
-        setLastAttempt(now)
-        
-        if (otpError.message.includes('rate limit')) {
-          // Set a longer countdown for rate limit errors (3 minutes)
-          setCountdown(180)
-          toast.error("Rate limit reached. Please wait 3 minutes before trying again.")
+      if (authError) {
+        console.error('Authentication error:', authError)
+
+        if (authError.message.includes('Invalid login credentials')) {
+          toast.error("Invalid email or password")
         } else {
-          // Regular cooldown for other errors
-          setCountdown(RATE_LIMIT_DURATION / 1000)
-          toast.error("Failed to send login link. Please try again later.")
+          toast.error("Login failed. Please try again.")
         }
         return
       }
 
-      console.log('Magic link sent successfully')
-      toast.success("Magic link sent to your email!")
+      // Update last login timestamp
+      await supabase
+        .from('crm_users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('email', normalizedEmail)
 
-      // Set a cooldown even on success to prevent spam
-      const now = Date.now()
-      localStorage.setItem('lastLoginAttempt', now.toString())
-      setLastAttempt(now)
-      setCountdown(30) // 30 second cooldown even on success
+      toast.success("Login successful!")
+
+      // Redirect based on user role
+      if (user.role === 'admin') {
+        router.push('/admin')
+      } else {
+        router.push('/')
+      }
+      router.refresh()
 
     } catch (error: any) {
       console.error('Login error:', error)
-      if (error.message) {
-        toast.error(`Error: ${error.message}`)
-      } else {
-        toast.error("Failed to send login link. Please try again.")
-      }
+      toast.error("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const isRateLimited = countdown > 0
-
   return (
     <div className="grid gap-6">
       <form onSubmit={onSubmit}>
-        <div className="grid gap-2">
-          <div className="grid gap-1">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              placeholder="username"
-              type="text"
-              autoCapitalize="none"
-              autoCorrect="off"
-              disabled={isLoading || isRateLimited}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
-          <div className="grid gap-1">
+        <div className="grid gap-4">
+          <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -218,21 +131,31 @@ export function LoginForm() {
               autoCapitalize="none"
               autoComplete="email"
               autoCorrect="off"
-              disabled={isLoading || isRateLimited}
+              disabled={isLoading}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <Button disabled={isLoading || isRateLimited}>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              placeholder="Enter your password"
+              type="password"
+              autoComplete="current-password"
+              disabled={isLoading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <Button disabled={isLoading} type="submit">
             {isLoading && (
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent" />
             )}
-            {isRateLimited 
-              ? `Wait ${countdown}s` 
-              : 'Sign In with Email'}
+            Sign In
           </Button>
-          {/* Removing the rate limit message */}
         </div>
       </form>
     </div>
