@@ -32,7 +32,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
       if (!searchQuery.trim()) return true
 
       const searchLower = searchQuery.toLowerCase()
-      
+
       // Search in customer basic info
       const basicInfoMatch = [
         customer.name,
@@ -42,18 +42,18 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
         customer.source,
         customer.status
       ].some(field => field?.toLowerCase().includes(searchLower))
-      
+
       if (basicInfoMatch) return true
 
       // Search in customer tags
       const customerTags = tags.filter(tag => tag.customerId === customer.id)
-      const tagMatch = customerTags.some(tag => 
+      const tagMatch = customerTags.some(tag =>
         tag.name.toLowerCase().includes(searchLower)
       )
       if (tagMatch) return true
 
       // Search in customer interactions
-      const customerInteractions = interactions.filter(interaction => 
+      const customerInteractions = interactions.filter(interaction =>
         interaction.customerId === customer.id
       )
       const interactionMatch = customerInteractions.some(interaction =>
@@ -77,7 +77,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
           customer.interestLevel,
           customer.budgetFit
         )
-        
+
         if (scoreQuery.startsWith('>')) {
           return customerScore > parseInt(scoreQuery.substring(1))
         } else if (scoreQuery.startsWith('<')) {
@@ -109,7 +109,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
         interaction => interaction.customerId === customer.id
       )
       const customerTasks = tasks.filter(task => task.customerId === customer.id)
-      
+
       const latestInteraction = customerInteractions[0]?.details || ''
       const openTasks = customerTasks.filter(task => !task.completed).length
 
@@ -125,10 +125,10 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
 
   const handleDownload = useCallback(() => {
     const exportData = prepareCustomerDataForExport(filteredCustomers)
-    const filename = searchQuery 
+    const filename = searchQuery
       ? `customers_${searchQuery.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`
       : 'all_customers.csv'
-    
+
     downloadCSV(exportData, filename)
     toast.success('Customer data downloaded successfully')
   }, [filteredCustomers, prepareCustomerDataForExport, searchQuery])
@@ -167,20 +167,22 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50/50">
+              <TableHead className="font-semibold">Date</TableHead>
               <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="font-semibold">Email</TableHead>
               <TableHead className="font-semibold">Phone</TableHead>
-              <TableHead className="font-semibold">School</TableHead>
+              <TableHead className="font-semibold">STD/Board</TableHead>
+              <TableHead className="font-semibold">Counsellor</TableHead>
+              <TableHead className="font-semibold">Lead Source</TableHead>
+              <TableHead className="font-semibold">Team</TableHead>
+              <TableHead className="font-semibold">Remarks</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="font-semibold">Added By</TableHead>
-              <TableHead className="font-semibold">Lead Score</TableHead>
               <TableHead className="text-right font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center">
+                <TableCell colSpan={10} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center text-gray-500">
                     <p className="mb-2">No customers found</p>
                     <p className="text-sm">Try adjusting your search criteria</p>
@@ -189,51 +191,36 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
               </TableRow>
             ) : (
               filteredCustomers.map((customer) => (
-                <TableRow 
+                <TableRow
                   key={customer.id}
                   className="hover:bg-gray-50/50 transition-colors"
                 >
+                  <TableCell className="text-gray-600 whitespace-nowrap">
+                    {new Date(customer.createdAt).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })}
+                  </TableCell>
                   <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell className="text-gray-600">{customer.email}</TableCell>
                   <TableCell className="text-gray-600">{customer.phone}</TableCell>
-                  <TableCell>{customer.school || "—"}</TableCell>
+                  <TableCell>{customer.stdBoard || "—"}</TableCell>
+                  <TableCell>{customer.counsellorName || "—"}</TableCell>
+                  <TableCell>{customer.source || "—"}</TableCell>
+                  <TableCell>
+                    {customer.team ? (
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                        {customer.team}
+                      </span>
+                    ) : "—"}
+                  </TableCell>
+                  <TableCell className="max-w-[150px] truncate" title={customer.remarks}>
+                    {customer.remarks || "—"}
+                  </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize bg-gray-100 text-gray-800">
                       {customer.status}
                     </span>
-                  </TableCell>
-                  <TableCell className="text-gray-600">{customer.addedBy}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1.5">
-                      <div className="w-full bg-gray-100 rounded-full h-1.5">
-                        <div
-                          className={cn(
-                            "h-1.5 rounded-full transition-all duration-300",
-                            isHotLead(getLeadScore(customer)) 
-                              ? "bg-gradient-to-r from-orange-500 to-red-500" 
-                              : "bg-gradient-to-r from-blue-500 to-violet-500"
-                          )}
-                          style={{
-                            width: `${getLeadScore(customer)}%`,
-                          }}
-                          aria-label={`Lead score: ${getLeadScore(customer)}%`}
-                          role="progressbar"
-                          aria-valuenow={getLeadScore(customer)}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-700">
-                          {getLeadScore(customer)}%
-                        </span>
-                        {isHotLead(getLeadScore(customer)) && (
-                          <span className="text-xs text-orange-600 font-medium flex items-center gap-1">
-                            Hot <span className="animate-pulse">🔥</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
@@ -246,7 +233,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button 
+                      <Button
                         variant="ghost"
                         size="icon"
                         className="hover:bg-red-50 hover:text-red-600"
