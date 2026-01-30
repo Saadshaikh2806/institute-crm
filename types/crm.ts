@@ -4,6 +4,10 @@ export interface Customer {
   email: string
   phone: string
   school?: string
+  stdBoard?: string
+  counsellorName?: string
+  team?: string
+  remarks?: string
   source: string
   status: "lead" | "active" | "inactive"
   leadScore: number

@@ -9,6 +9,10 @@ const mapCustomerData = (data: any): Customer => ({
   email: data.email,
   phone: data.phone,
   school: data.school,
+  stdBoard: data.std_board,
+  counsellorName: data.counsellor_name,
+  team: data.team,
+  remarks: data.remarks,
   source: data.source,
   status: data.status,
   leadScore: data.lead_score || 0,
@@ -78,17 +82,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         // Instead of throwing error, just return silently when not authenticated
         return
       }
-  
+
       // Modified query to include shared customers
       const { data: customers, error } = await supabase
         .from('customers')
         .select('*')
         .order('created_at', { ascending: false })
-      
+
       // The RLS policies will automatically filter to show only owned and shared customers
-  
+
       if (error) throw error
-  
+
       set({
         customers: customers.map(mapCustomerData)
       })
@@ -116,13 +120,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         email: customerData.email,
         phone: customerData.phone,
         school: customerData.school,
+        std_board: customerData.stdBoard,
+        counsellor_name: customerData.counsellorName,
+        team: customerData.team,
+        remarks: customerData.remarks,
         source: customerData.source,
         status: customerData.status,
         lead_score: customerData.leadScore,
         engagement: customerData.engagement,
         interest_level: customerData.interestLevel,
         budget_fit: customerData.budgetFit,
-        added_by: customerData.addedBy // Use the provided addedBy value
+        added_by: customerData.addedBy
       }
 
       const { data, error } = await supabase
@@ -140,6 +148,10 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           email: data.email,
           phone: data.phone,
           school: data.school,
+          stdBoard: data.std_board,
+          counsellorName: data.counsellor_name,
+          team: data.team,
+          remarks: data.remarks,
           source: data.source,
           status: data.status,
           leadScore: data.lead_score,
@@ -198,7 +210,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       const { error } = await supabase
         .from('customers')
-        .update({ 
+        .update({
           status,
           updated_at: new Date().toISOString()
         })
@@ -209,7 +221,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       set((state) => ({
         customers: state.customers.map((customer) =>
-          customer.id === id 
+          customer.id === id
             ? { ...customer, status, updatedAt: new Date() }
             : customer
         ),
@@ -255,13 +267,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         customers: state.customers.map((customer) =>
           customer.id === id
             ? {
-                ...customer,
-                leadScore: calculatedLeadScore,
-                engagement: Number(scores.engagement),
-                interestLevel: Number(scores.interestLevel),
-                budgetFit: Number(scores.budgetFit),
-                updatedAt: new Date()
-              }
+              ...customer,
+              leadScore: calculatedLeadScore,
+              engagement: Number(scores.engagement),
+              interestLevel: Number(scores.interestLevel),
+              budgetFit: Number(scores.budgetFit),
+              updatedAt: new Date()
+            }
             : customer
         ),
       }))
@@ -352,7 +364,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         set((state) => ({
           tasks: [...state.tasks, newTask]
         }))
-        
+
         // Fetch all tasks to ensure state is in sync
         await get().fetchAllTasks()
 
@@ -506,13 +518,15 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       if (error) throw error
 
-      set({ interactions: data.map(interaction => ({
-        id: interaction.id,
-        customerId: interaction.customer_id,
-        type: interaction.type,
-        details: interaction.details,
-        createdAt: new Date(interaction.created_at)
-      }))})
+      set({
+        interactions: data.map(interaction => ({
+          id: interaction.id,
+          customerId: interaction.customer_id,
+          type: interaction.type,
+          details: interaction.details,
+          createdAt: new Date(interaction.created_at)
+        }))
+      })
     } catch (error) {
       console.error('Error fetching interactions:', error)
       toast.error('Failed to fetch interactions')
@@ -535,7 +549,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       if (error) throw error
 
-      set({ 
+      set({
         tasks: data.map(task => ({
           id: task.id,
           customerId: task.customer_id,
@@ -567,11 +581,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       if (error) throw error
 
-      set({ tags: data.map(tag => ({
-        id: tag.id,
-        customerId: tag.customer_id,
-        name: tag.name
-      }))})
+      set({
+        tags: data.map(tag => ({
+          id: tag.id,
+          customerId: tag.customer_id,
+          name: tag.name
+        }))
+      })
     } catch (error) {
       console.error('Error fetching tags:', error)
       toast.error('Failed to fetch tags')
@@ -593,7 +609,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       if (error) throw error
 
-      set({ 
+      set({
         interactions: data.map(interaction => ({
           id: interaction.id,
           customerId: interaction.customer_id,
@@ -652,7 +668,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
 
       if (error) throw error
 
-      set({ 
+      set({
         tags: data.map(tag => ({
           id: tag.id,
           customerId: tag.customer_id,
@@ -692,10 +708,10 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         customers: state.customers.map((customer) =>
           customer.id === id
             ? {
-                ...customer,
-                ...details,
-                updatedAt: new Date()
-              }
+              ...customer,
+              ...details,
+              updatedAt: new Date()
+            }
             : customer
         ),
       }))
@@ -718,7 +734,7 @@ const searchCustomers = async (query: string) => {
     .order("created_at", { ascending: false })
 
   if (error) throw new Error(error.message)
-  
+
   return data.map(mapCustomerData)
 }
 

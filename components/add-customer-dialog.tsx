@@ -26,13 +26,17 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     email: "",
     phone: "",
     school: "",
+    stdBoard: "",
+    counsellorName: "",
+    team: "",
+    remarks: "",
     source: "",
     status: "lead" as const,
     leadScore: 0,
     engagement: 0,
     interestLevel: 0,
     budgetFit: 0,
-    addedBy: "" // Add this field
+    addedBy: ""
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -40,27 +44,31 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const supabase = createClientComponentClient();
     const { data: { session } } = await supabase.auth.getSession();
-  
+
     if (!session?.user?.id) {
       toast.error("Please sign in to add customers");
       return;
     }
-  
+
     const customerData = {
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
       school: formData.school,
+      stdBoard: formData.stdBoard,
+      counsellorName: formData.counsellorName,
+      team: formData.team,
+      remarks: formData.remarks,
       source: formData.source || 'direct',
       status: formData.status || 'lead',
       leadScore: formData.leadScore,
       engagement: formData.engagement,
       interestLevel: formData.interestLevel,
       budgetFit: formData.budgetFit,
-      addedBy: formData.addedBy // Just use the form input value directly
+      addedBy: formData.addedBy
     };
 
     try {
@@ -73,6 +81,10 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
         email: "",
         phone: "",
         school: "",
+        stdBoard: "",
+        counsellorName: "",
+        team: "",
+        remarks: "",
         source: "",
         status: "lead",
         leadScore: 0,
@@ -93,7 +105,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
   const handleFileSelect = (file: File) => {
     if (!file) return
-    
+
     // Validate file type
     const validTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
     if (!validTypes.includes(file.type)) {
@@ -131,16 +143,16 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
   const processFile = async (file: File): Promise<any[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
-      
+
       reader.onload = async (e) => {
         try {
           let data: any[] = []
-          
+
           if (file.type === 'text/csv') {
             const text = e.target?.result as string
             const rows = text.split('\n')
             const headers = rows[0].split(',').map(h => h.trim())
-            
+
             data = rows.slice(1).map(row => {
               const values = row.split(',').map(v => v.trim())
               return headers.reduce((obj, header, i) => {
@@ -154,10 +166,10 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
             const worksheet = workbook.Sheets[sheetName]
             data = XLSX.utils.sheet_to_json(worksheet)
           }
-          
-          resolve(data.filter(row => 
-            row.name && 
-            row.phone && 
+
+          resolve(data.filter(row =>
+            row.name &&
+            row.phone &&
             Object.values(row).some(v => v)
           ))
         } catch (error) {
@@ -166,7 +178,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       }
 
       reader.onerror = () => reject(reader.error)
-      
+
       if (file.type === 'text/csv') {
         reader.readAsText(file)
       } else {
@@ -188,7 +200,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
     const supabase = createClientComponentClient();
     const { data: { session } } = await supabase.auth.getSession();
-  
+
     if (!session?.user?.id) {
       toast.error("Please sign in to add customers");
       return;
@@ -197,7 +209,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     setIsSubmitting(true)
     try {
       const processedData = await processFile(selectedFile)
-      
+
       if (processedData.length === 0) {
         toast.error('No valid records found in file')
         return
@@ -213,16 +225,20 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
             email: record.email || '',
             phone: record.phone,
             school: record.school || '',
-            source: record.source || 'Other',
-            status: (record.status?.toLowerCase() === 'active' || 
-                    record.status?.toLowerCase() === 'inactive') 
-                    ? record.status.toLowerCase() 
-                    : 'lead',
+            stdBoard: record.stdboard || record['std/board'] || '',
+            counsellorName: record.counsellorname || record['counsellor name'] || '',
+            team: record.team || '',
+            remarks: record.remarks || record.remark || '',
+            source: record.source || record.leadsource || record['lead source'] || 'Other',
+            status: (record.status?.toLowerCase() === 'active' ||
+              record.status?.toLowerCase() === 'inactive')
+              ? record.status.toLowerCase()
+              : 'lead',
             leadScore: 0,
             engagement: 0,
             interestLevel: 0,
             budgetFit: 0,
-            addedBy: record.addedby || formData.addedBy // Try to use CSV value first, then form value
+            addedBy: record.addedby || formData.addedBy
           })
           successCount++
         } catch (error) {
@@ -244,7 +260,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
-      
+
       // Close dialog if all successful
       if (errorCount === 0) {
         onOpenChange(false)
@@ -324,7 +340,46 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="source">Source</Label>
+                <Label htmlFor="stdBoard">STD/Board (Optional)</Label>
+                <Input
+                  id="stdBoard"
+                  placeholder="Enter STD/Board (e.g., 10th, 12th)"
+                  value={formData.stdBoard}
+                  onChange={(e) => handleChange("stdBoard", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="counsellorName">Counsellor Name (Optional)</Label>
+                <Input
+                  id="counsellorName"
+                  placeholder="Enter counsellor name"
+                  value={formData.counsellorName}
+                  onChange={(e) => handleChange("counsellorName", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="team">Team</Label>
+                <Select value={formData.team} onValueChange={(value) => handleChange("team", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sangeeta">Sangeeta</SelectItem>
+                    <SelectItem value="Kavita">Kavita</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="remarks">Remarks (Optional)</Label>
+                <Input
+                  id="remarks"
+                  placeholder="Enter any remarks"
+                  value={formData.remarks}
+                  onChange={(e) => handleChange("remarks", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="source">Lead Source</Label>
                 <Select value={formData.source} onValueChange={(value) => handleChange("source", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select source" />
@@ -333,7 +388,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                     <SelectItem value="Website">Website</SelectItem>
                     <SelectItem value="Referral">Referral</SelectItem>
                     <SelectItem value="Social Media">Social Media</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem> {/* Add this line */}
+                    <SelectItem value="Marketing">Marketing</SelectItem>
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -352,15 +407,15 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                 </Select>
               </div>
               <div className="flex flex-col sm:flex-row justify-end gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => onOpenChange(false)}
                   className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isSubmitting}
                   className="w-full sm:w-auto"
                 >
@@ -386,19 +441,19 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                 </p>
               </div>
               <div className="flex justify-end">
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   onClick={() => {
                     const sampleData = [
-                      ['Name', 'Email', 'Phone', 'School', 'Source', 'Status'],
-                      ['John Doe', 'john@example.com', '1234567890', 'ABC School', 'Website', 'lead'],
-                      ['Jane Smith', 'jane@example.com', '0987654321', 'XYZ School', 'Referral', 'lead']
+                      ['Name', 'Phone', 'STD/Board', 'Counsellor Name', 'Lead Source', 'Team', 'Remarks', 'Email', 'School', 'Status'],
+                      ['John Doe', '1234567890', '10th', 'Poonam Maam', 'Website', 'Sangeeta', 'Follow up required', 'john@example.com', 'ABC School', 'lead'],
+                      ['Jane Smith', '0987654321', '12th', 'Leena Maam', 'Referral', 'Kavita', 'Interested in admission', 'jane@example.com', 'XYZ School', 'lead']
                     ]
-                    
+
                     const csvContent = sampleData
                       .map(row => row.join(','))
                       .join('\n')
-                    
+
                     const blob = new Blob([csvContent], { type: 'text/csv' })
                     const url = window.URL.createObjectURL(blob)
                     const a = document.createElement('a')
@@ -415,9 +470,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                 </Button>
               </div>
               <div
-                className={`rounded-lg border border-dashed p-8 text-center transition-colors ${
-                  isDragging ? 'border-primary bg-primary/10' : ''
-                } ${selectedFile ? 'border-green-500 bg-green-50' : ''}`}
+                className={`rounded-lg border border-dashed p-8 text-center transition-colors ${isDragging ? 'border-primary bg-primary/10' : ''
+                  } ${selectedFile ? 'border-green-500 bg-green-50' : ''}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -458,8 +512,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   </p>
                 </div>
               </div>
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 onClick={handleFileUpload}
                 disabled={!selectedFile || isSubmitting}
               >
