@@ -220,6 +220,33 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
       for (const record of processedData) {
         try {
+          // Parse date from CSV if provided (supports DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY)
+          let customDate: string | undefined = undefined
+          const dateValue = record.date || record.Date || record.DATE
+          if (dateValue) {
+            try {
+              // Try parsing different date formats
+              let parsedDate: Date | null = null
+              const dateStr = String(dateValue).trim()
+
+              // DD/MM/YYYY or DD-MM-YYYY format
+              if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(dateStr)) {
+                const parts = dateStr.split(/[\/\-]/)
+                parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]))
+              }
+              // YYYY-MM-DD format
+              else if (/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/.test(dateStr)) {
+                parsedDate = new Date(dateStr)
+              }
+
+              if (parsedDate && !isNaN(parsedDate.getTime())) {
+                customDate = parsedDate.toISOString()
+              }
+            } catch (e) {
+              console.log('Could not parse date:', dateValue)
+            }
+          }
+
           await addCustomer({
             name: record.name,
             email: record.email || '',
@@ -238,8 +265,9 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
             engagement: 0,
             interestLevel: 0,
             budgetFit: 0,
-            addedBy: record.addedby || formData.addedBy
-          })
+            addedBy: record.addedby || formData.addedBy,
+            customDate
+          } as any)
           successCount++
         } catch (error) {
           console.error('Error adding record:', record, error)
@@ -445,9 +473,9 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   variant="link"
                   onClick={() => {
                     const sampleData = [
-                      ['Name', 'Phone', 'STD/Board', 'Counsellor Name', 'Lead Source', 'Team', 'Remarks', 'Email', 'School', 'Status'],
-                      ['John Doe', '1234567890', '10th', 'Poonam Maam', 'Website', 'Sangeeta', 'Follow up required', 'john@example.com', 'ABC School', 'lead'],
-                      ['Jane Smith', '0987654321', '12th', 'Leena Maam', 'Referral', 'Kavita', 'Interested in admission', 'jane@example.com', 'XYZ School', 'lead']
+                      ['Date', 'Name', 'Phone', 'STD/Board', 'Counsellor Name', 'Lead Source', 'Team', 'Remarks', 'Email', 'School', 'Status'],
+                      ['30/01/2026', 'John Doe', '1234567890', '10th', 'Poonam Maam', 'Website', 'Sangeeta', 'Follow up required', 'john@example.com', 'ABC School', 'lead'],
+                      ['29/01/2026', 'Jane Smith', '0987654321', '12th', 'Leena Maam', 'Referral', 'Kavita', 'Interested in admission', 'jane@example.com', 'XYZ School', 'lead']
                     ]
 
                     const csvContent = sampleData

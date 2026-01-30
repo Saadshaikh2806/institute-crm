@@ -114,8 +114,8 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       }
 
       // Convert camelCase to snake_case for Supabase
-      const supabaseData = {
-        user_id: session.user.id, // Explicitly set the user_id
+      const supabaseData: any = {
+        user_id: session.user.id,
         name: customerData.name,
         email: customerData.email,
         phone: customerData.phone,
@@ -131,6 +131,11 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         interest_level: customerData.interestLevel,
         budget_fit: customerData.budgetFit,
         added_by: customerData.addedBy
+      }
+
+      // Add custom created_at if provided (for bulk imports with dates)
+      if ((customerData as any).customDate) {
+        supabaseData.created_at = (customerData as any).customDate
       }
 
       const { data, error } = await supabase
