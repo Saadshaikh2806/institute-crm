@@ -276,7 +276,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[425px] h-[90vh] sm:h-auto overflow-y-auto" aria-describedby="add-customer-description">
+      <DialogContent className="w-[95vw] max-w-[500px] max-h-[85vh] overflow-y-auto" aria-describedby="add-customer-description">
         <DialogHeader>
           <DialogTitle>Add Customer</DialogTitle>
           <p id="add-customer-description" className="text-sm text-muted-foreground">
