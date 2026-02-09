@@ -4,57 +4,12 @@ import type { NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = ['/login', '/auth/callback'] as const
 
-let hasInitialized = false;
-
-async function triggerEmailAPI() {
-  try {
-    const response = await fetch('http://localhost:3000/api/public/daily-tasks', {
-      headers: {
-        'Authorization': `Bearer ${process.env.CRON_SECRET_KEY}`
-      }
-    });
-    console.log('Email API triggered:', await response.text());
-  } catch (error) {
-    console.error('Failed to trigger email API:', error);
-  }
-}
-
-function startPeriodicEmails() {
-  // Trigger immediately
-  triggerEmailAPI();
-  
-  // Then every 30 seconds
-  setInterval(triggerEmailAPI, 30000);
-}
-
 export async function middleware(req: NextRequest) {
-  // Skip middleware completely for cron routes
-  if (req.nextUrl.pathname.startsWith('/api/cron/')) {
-    return NextResponse.next()
-  }
-
-  if (process.env.NODE_ENV === 'development' && !hasInitialized) {
-    hasInitialized = true;
-    console.log('Development server started - initializing email triggers');
-    startPeriodicEmails();
-  }
-
-  // Check if it's a cron request
-  if (req.nextUrl.pathname.startsWith('/api/cron')) {
-    const hostname = req.headers.get('host')
-    
-    // If not coming from the main domain, redirect
-    if (hostname !== 'adci-crm.vercel.app') {
-      return NextResponse.redirect(
-        new URL(req.nextUrl.pathname, 'https://adci-crm.vercel.app')
-      )
-    }
-  }
-
   // Skip middleware for public API routes
   if (req.nextUrl.pathname.startsWith('/api/public/')) {
     return NextResponse.next()
   }
+
 
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
@@ -65,9 +20,9 @@ export async function middleware(req: NextRequest) {
 
   try {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
+
     if (sessionError) throw sessionError
-    
+
     if (!session?.user?.email) {
       return redirectToLogin(req)
     }
@@ -88,7 +43,29 @@ export async function middleware(req: NextRequest) {
 
     // Admin route protection - updated logic
     const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
+    const isSuperAdminRoute = req.nextUrl.pathname.startsWith('/super-admin')
     const isAdminUser = userData.role === 'admin'
+    const isSuperAdminUser = userData.role === 'super_admin'
+
+    // Super Admin routing
+    if (isSuperAdminUser) {
+      // Super admin accessing root - redirect to super-admin
+      if (req.nextUrl.pathname === '/') {
+        return NextResponse.redirect(new URL('/super-admin', req.url))
+      }
+      // Super admin can access everything except force redirect to super-admin dashboard
+      if (!isSuperAdminRoute && !req.nextUrl.pathname.startsWith('/api/')) {
+        return NextResponse.redirect(new URL('/super-admin', req.url))
+      }
+    }
+
+    // Non-super-admin trying to access super-admin routes
+    if (isSuperAdminRoute && !isSuperAdminUser) {
+      if (isAdminUser) {
+        return NextResponse.redirect(new URL('/admin', req.url))
+      }
+      return NextResponse.redirect(new URL('/', req.url))
+    }
 
     // If user is admin and tries to access dashboard, redirect to admin
     if (isAdminUser && req.nextUrl.pathname === '/') {
@@ -96,7 +73,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // If non-admin tries to access admin routes, redirect to dashboard
-    if (isAdminRoute && !isAdminUser) {
+    if (isAdminRoute && !isAdminUser && !isSuperAdminUser) {
       return NextResponse.redirect(new URL('/', req.url))
     }
 
@@ -122,7 +99,7 @@ export async function middleware(req: NextRequest) {
     // Check for shared access if accessing customer data
     if (req.nextUrl.pathname.startsWith('/customers/')) {
       const customerId = req.nextUrl.pathname.split('/')[2]
-      
+
       if (customerId) {
         if (!session?.user?.id) return redirectToLogin(req)
 
@@ -132,7 +109,7 @@ export async function middleware(req: NextRequest) {
           .select('permissions')
           .eq('shared_with_id', session.user.id)
           .single()
-          
+
         if (sharedError && sharedError.code !== 'PGRST116') {
           console.error('Shared access check error:', sharedError)
           return redirectToLogin(req, 'access_error')
@@ -145,7 +122,7 @@ export async function middleware(req: NextRequest) {
     console.error('Middleware error:', error)
     return redirectToLogin(req, 'auth_error')
   }
-  
+
 }
 
 function redirectToLogin(req: NextRequest, error?: string) {
@@ -159,7 +136,6 @@ function redirectToLogin(req: NextRequest, error?: string) {
 
 export const config = {
   matcher: [
-    // Exclude cron routes from middleware
-    '/((?!api/cron|api/public|_next/static|_next/image|favicon.ico).*)'
+    '/((?!api/public|_next/static|_next/image|favicon.ico).*)'
   ]
 }

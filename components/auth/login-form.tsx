@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { logActivity } from "@/lib/activity-logger"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -100,13 +101,21 @@ export function LoginForm() {
         .update({ last_login: new Date().toISOString() })
         .eq('email', normalizedEmail)
 
+      // Log the login activity
+      await logActivity({
+        actionType: 'login',
+        details: { email: normalizedEmail, fullName: user.full_name }
+      })
+
       toast.success("Login successful!")
 
-      // Redirect based on user role
-      if (user.role === 'admin') {
-        router.push('/admin')
+      // Redirect based on user role - use replace instead of push to prevent back navigation to login
+      if (user.role === 'super_admin') {
+        router.replace('/super-admin')
+      } else if (user.role === 'admin') {
+        router.replace('/admin')
       } else {
-        router.push('/')
+        router.replace('/')
       }
       router.refresh()
 

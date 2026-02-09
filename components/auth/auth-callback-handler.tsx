@@ -14,7 +14,7 @@ export function AuthCallbackHandler() {
       // Prevent multiple processing attempts
       if (isProcessing) return
       setIsProcessing(true)
-      
+
       // Check if we have an access token in the URL hash
       if (window.location.hash && window.location.hash.includes('access_token=')) {
         try {
@@ -24,7 +24,7 @@ export function AuthCallbackHandler() {
           const refreshToken = hashParams.get('refresh_token')
 
           if (!accessToken || !refreshToken) {
-            router.push('/login?error=invalid_token')
+            router.replace('/login?error=invalid_token')
             return
           }
 
@@ -36,16 +36,16 @@ export function AuthCallbackHandler() {
 
           if (setSessionError) {
             console.error('Set session error:', setSessionError)
-            router.push('/login?error=auth')
+            router.replace('/login?error=auth')
             return
           }
 
           // Get the current session
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-          
+
           if (sessionError || !session?.user?.email) {
             console.error('Session error:', sessionError)
-            router.push('/login?error=no_user')
+            router.replace('/login?error=no_user')
             return
           }
 
@@ -58,13 +58,13 @@ export function AuthCallbackHandler() {
 
           if (userError || !userData) {
             console.error('User error:', userError)
-            router.push('/login?error=no_access')
+            router.replace('/login?error=no_access')
             return
           }
 
           // Check if user is active
           if (!userData.is_active) {
-            router.push('/login?error=inactive')
+            router.replace('/login?error=inactive')
             return
           }
 
@@ -77,15 +77,15 @@ export function AuthCallbackHandler() {
           // Clear the hash from the URL without triggering a refresh
           window.history.replaceState(null, '', window.location.pathname)
 
-          // Redirect based on role
+          // Redirect based on role - use replace to prevent back navigation issues
           if (userData.role === 'admin') {
-            router.push('/admin')
+            router.replace('/admin')
           } else {
-            router.push('/')
+            router.replace('/')
           }
         } catch (error) {
           console.error('Auth callback error:', error)
-          router.push('/login?error=callback')
+          router.replace('/login?error=callback')
         } finally {
           setIsProcessing(false)
         }

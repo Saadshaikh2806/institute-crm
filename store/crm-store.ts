@@ -2,6 +2,7 @@ import { create } from "zustand"
 import type { Customer, Interaction, Task, Tag } from "@/types/crm"
 import { toast } from "sonner"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { logActivity } from "@/lib/activity-logger"
 
 const mapCustomerData = (data: any): Customer => ({
   id: data.id,
@@ -171,6 +172,14 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         set((state) => ({
           customers: [newCustomer, ...state.customers],
         }));
+
+        // Log activity
+        await logActivity({
+          actionType: 'customer_create',
+          entityType: 'customer',
+          entityId: newCustomer.id,
+          details: { customerName: newCustomer.name, email: newCustomer.email }
+        })
       }
     } catch (error) {
       console.error('Error adding customer:', error);
@@ -197,6 +206,14 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       set((state) => ({
         customers: state.customers.filter((customer) => customer.id !== id),
       }))
+
+      // Log activity
+      await logActivity({
+        actionType: 'customer_delete',
+        entityType: 'customer',
+        entityId: id,
+        details: {}
+      })
 
       toast.success('Customer deleted successfully')
     } catch (error) {
@@ -406,6 +423,16 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           t.id === id ? { ...t, completed: !t.completed } : t
         )
       }))
+
+      // Log activity
+      if (!task.completed) {
+        await logActivity({
+          actionType: 'task_complete',
+          entityType: 'task',
+          entityId: id,
+          details: { taskTitle: task.title }
+        })
+      }
 
       toast.success('Task updated successfully')
     } catch (error) {

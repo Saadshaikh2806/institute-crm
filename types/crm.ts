@@ -43,3 +43,50 @@ export interface Tag {
   customerId: string
 }
 
+export type UserRole = "super_admin" | "admin" | "user"
+
+export interface UserActivityLog {
+  id: string
+  userId: string
+  userEmail?: string
+  actionType: ActivityActionType
+  entityType?: EntityType
+  entityId?: string
+  details?: Record<string, any>
+  ipAddress?: string
+  createdAt: Date
+}
+
+export type ActivityActionType =
+  | "login"
+  | "logout"
+  | "customer_create"
+  | "customer_update"
+  | "customer_delete"
+  | "customer_status_change"
+  | "task_create"
+  | "task_complete"
+  | "task_delete"
+  | "interaction_add"
+  | "tag_add"
+  | "tag_delete"
+  | "user_create"
+  | "user_update"
+  | "user_deactivate"
+
+export type EntityType = "customer" | "task" | "interaction" | "tag" | "user"
+
+export interface UserStats {
+  userId: string
+  authUserId: string
+  email: string
+  fullName: string
+  role: UserRole
+  isActive: boolean
+  lastLogin: Date | null
+  createdAt: Date
+  customerCount: number
+  taskCount: number
+  completedTaskCount: number
+  lastActivity: Date | null
+}
