@@ -196,9 +196,9 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
                   className="hover:bg-gray-50/50 transition-colors"
                 >
                   <TableCell className="text-gray-600 whitespace-nowrap">
-                    {new Date(customer.createdAt).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: '2-digit',
+                    {new Date(customer.createdAt).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
                       year: 'numeric'
                     })}
                   </TableCell>

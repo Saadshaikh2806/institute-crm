@@ -229,10 +229,26 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
               let parsedDate: Date | null = null
               const dateStr = String(dateValue).trim()
 
-              // DD/MM/YYYY or DD-MM-YYYY format
+              // DD/MM/YYYY, DD-MM-YYYY, or MM/DD/YYYY format
               if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(dateStr)) {
                 const parts = dateStr.split(/[\/\-]/)
-                parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]))
+                const first = parseInt(parts[0])
+                const second = parseInt(parts[1])
+                const year = parseInt(parts[2])
+
+                // If second part > 12, it must be a day, so format is MM/DD/YYYY
+                // If first part > 12, it must be a day, so format is DD/MM/YYYY
+                // Otherwise, assume MM/DD/YYYY (US format) as that's what user indicated
+                if (second > 12) {
+                  // MM/DD/YYYY format (e.g., 1/27/2026)
+                  parsedDate = new Date(year, first - 1, second)
+                } else if (first > 12) {
+                  // DD/MM/YYYY format (e.g., 27/1/2026)
+                  parsedDate = new Date(year, second - 1, first)
+                } else {
+                  // Ambiguous case (e.g., 1/6/2026) - assume MM/DD/YYYY (US format)
+                  parsedDate = new Date(year, first - 1, second)
+                }
               }
               // YYYY-MM-DD format
               else if (/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/.test(dateStr)) {
