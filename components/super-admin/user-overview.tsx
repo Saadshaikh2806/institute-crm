@@ -7,9 +7,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
-import { Users, FileText, CheckCircle, Clock, Search, RefreshCw } from "lucide-react"
+import { Users, FileText, CheckCircle, Clock, Search, RefreshCw, KeyRound, Eye, EyeOff } from "lucide-react"
 import type { UserStats } from "@/types/crm"
 import { logActivity } from "@/lib/activity-logger"
 
@@ -32,6 +41,15 @@ export function UserOverview() {
     const [users, setUsers] = useState<UserWithStats[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
+
+    // Reset password modal state
+    const [resetModalOpen, setResetModalOpen] = useState(false)
+    const [selectedUser, setSelectedUser] = useState<UserWithStats | null>(null)
+    const [newPass, setNewPass] = useState("")
+    const [confirmPass, setConfirmPass] = useState("")
+    const [showNewPass, setShowNewPass] = useState(false)
+    const [showConfirmPass, setShowConfirmPass] = useState(false)
+    const [isResetting, setIsResetting] = useState(false)
 
     useEffect(() => {
         fetchUsersWithStats()
@@ -113,6 +131,53 @@ export function UserOverview() {
         }
     }
 
+    // Open reset password dialog for a user
+    const openResetModal = (user: UserWithStats) => {
+        setSelectedUser(user)
+        setNewPass("")
+        setConfirmPass("")
+        setShowNewPass(false)
+        setShowConfirmPass(false)
+        setResetModalOpen(true)
+    }
+
+    // Call server-side API route using service role key (no email needed)
+    const handleResetPassword = async () => {
+        if (!selectedUser) return
+
+        if (newPass.length < 6) {
+            toast.error("Password must be at least 6 characters")
+            return
+        }
+
+        if (newPass !== confirmPass) {
+            toast.error("Passwords do not match")
+            return
+        }
+
+        setIsResetting(true)
+        try {
+            const res = await fetch("/api/admin/reset-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: selectedUser.auth_user_id,
+                    newPassword: newPass,
+                }),
+            })
+
+            const result = await res.json()
+            if (!res.ok) throw new Error(result.error || "Failed to reset password")
+
+            toast.success(`Password reset for ${selectedUser.full_name || selectedUser.email}`)
+            setResetModalOpen(false)
+        } catch (error: any) {
+            toast.error(error.message || "Failed to reset password")
+        } finally {
+            setIsResetting(false)
+        }
+    }
+
     const filteredUsers = users.filter(user =>
         user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -132,6 +197,7 @@ export function UserOverview() {
     }
 
     return (
+        <>
         <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -249,13 +315,24 @@ export function UserOverview() {
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => toggleUserStatus(user.id, user.is_active, user.email)}
-                                    >
-                                        {user.is_active ? 'Deactivate' : 'Activate'}
-                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => toggleUserStatus(user.id, user.is_active, user.email)}
+                                        >
+                                            {user.is_active ? 'Deactivate' : 'Activate'}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => openResetModal(user)}
+                                            className="flex items-center gap-1"
+                                        >
+                                            <KeyRound className="w-4 h-4" />
+                                            Reset Password
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -263,5 +340,90 @@ export function UserOverview() {
                 </Table>
             </div>
         </div>
+
+        {/* Reset Password Modal */}
+        <Dialog open={resetModalOpen} onOpenChange={setResetModalOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <KeyRound className="w-5 h-5" />
+                        Reset Password
+                    </DialogTitle>
+                    <DialogDescription>
+                        Set a new password for{" "}
+                        <span className="font-medium text-foreground">
+                            {selectedUser?.full_name || selectedUser?.email}
+                        </span>
+                        . No email will be sent — the password is changed immediately.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                    {/* New Password */}
+                    <div className="space-y-1">
+                        <Label htmlFor="sa-new-password">New Password</Label>
+                        <div className="relative">
+                            <Input
+                                id="sa-new-password"
+                                type={showNewPass ? "text" : "password"}
+                                placeholder="Enter new password"
+                                value={newPass}
+                                onChange={(e) => setNewPass(e.target.value)}
+                                minLength={6}
+                                className="pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowNewPass((v) => !v)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                tabIndex={-1}
+                            >
+                                {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div className="space-y-1">
+                        <Label htmlFor="sa-confirm-password">Confirm Password</Label>
+                        <div className="relative">
+                            <Input
+                                id="sa-confirm-password"
+                                type={showConfirmPass ? "text" : "password"}
+                                placeholder="Confirm new password"
+                                value={confirmPass}
+                                onChange={(e) => setConfirmPass(e.target.value)}
+                                className="pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPass((v) => !v)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                tabIndex={-1}
+                            >
+                                {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                        {confirmPass && newPass !== confirmPass && (
+                            <p className="text-xs text-destructive">Passwords do not match</p>
+                        )}
+                    </div>
+                </div>
+
+                <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={() => setResetModalOpen(false)} disabled={isResetting}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleResetPassword}
+                        disabled={isResetting || newPass.length < 6 || newPass !== confirmPass}
+                    >
+                        {isResetting ? "Resetting..." : "Reset Password"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
     )
 }
