@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { logActivity } from "@/lib/activity-logger"
+import { createSessionToken, setBrowserSessionToken } from "@/lib/single-session"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -39,6 +40,8 @@ export function LoginForm() {
         toast.error("Invalid authentication token. Please try logging in again.")
       } else if (error === 'admin_required') {
         toast.error("You need administrator access for this area. Please login with an admin account.")
+      } else if (error === 'session_replaced') {
+        toast.error("You were signed out because this account logged in somewhere else.")
       }
 
       // Clear the error from URL without refreshing the page
@@ -95,11 +98,18 @@ export function LoginForm() {
         return
       }
 
-      // Update last login timestamp
+      const sessionToken = createSessionToken()
+
+      // Update last login timestamp and mark this browser as the only active session
       await supabase
         .from('crm_users')
-        .update({ last_login: new Date().toISOString() })
+        .update({
+          last_login: new Date().toISOString(),
+          active_session_token: sessionToken
+        })
         .eq('email', normalizedEmail)
+
+      setBrowserSessionToken(sessionToken)
 
       // Log the login activity
       await logActivity({

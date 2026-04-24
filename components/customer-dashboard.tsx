@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import { CustomerDetailsDialog } from "@/components/customer-details-dialog"
 import { DueTasksList } from "./due-tasks-list"
 import type { Task } from "@/types/crm"  // Add this import at the top with other imports
+import { clearBrowserSessionToken } from "@/lib/single-session"
 
 export function CustomerDashboard() {
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
@@ -46,6 +47,7 @@ export function CustomerDashboard() {
   const handleSignOut = async () => {
     setIsSigningOut(true)
     try {
+      clearBrowserSessionToken()
       await supabase.auth.signOut()
       router.push('/login')
       toast.success('Signed out successfully')

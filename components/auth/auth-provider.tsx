@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { Session, createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Loader2 } from "lucide-react"
+import { clearBrowserSessionToken, getBrowserSessionToken } from "@/lib/single-session"
 
 interface AuthContextType {
   session: Session | null
@@ -40,6 +41,40 @@ export function AuthProvider({
       subscription.unsubscribe()
     }
   }, [supabase.auth])
+
+  useEffect(() => {
+    if (!session?.user?.email) return
+
+    let isMounted = true
+
+    const enforceSingleSession = async () => {
+      const browserSessionToken = getBrowserSessionToken()
+
+      if (!browserSessionToken) return
+
+      const { data, error } = await supabase
+        .from('crm_users')
+        .select('active_session_token')
+        .eq('email', session.user.email)
+        .single()
+
+      if (!isMounted || error) return
+
+      if (data?.active_session_token && data.active_session_token !== browserSessionToken) {
+        clearBrowserSessionToken()
+        await supabase.auth.signOut()
+        window.location.replace('/login?error=session_replaced')
+      }
+    }
+
+    enforceSingleSession()
+    const interval = window.setInterval(enforceSingleSession, 15000)
+
+    return () => {
+      isMounted = false
+      window.clearInterval(interval)
+    }
+  }, [session?.user?.email, supabase])
 
   if (isLoading) {
     return (

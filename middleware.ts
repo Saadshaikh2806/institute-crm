@@ -1,6 +1,7 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { SESSION_TOKEN_COOKIE } from '@/lib/single-session'
 
 const PUBLIC_PATHS = ['/login', '/auth/callback'] as const
 
@@ -30,7 +31,7 @@ export async function middleware(req: NextRequest) {
     // Get user role first since we'll need it for multiple checks
     const { data: userData, error: userRoleError } = await supabase
       .from('crm_users')
-      .select('role, is_active')
+      .select('role, is_active, active_session_token')
       .eq('email', session.user.email)
       .single()
 
@@ -39,6 +40,17 @@ export async function middleware(req: NextRequest) {
     if (!userData || !userData.is_active) {
       await supabase.auth.signOut()
       return redirectToLogin(req, 'no_access')
+    }
+
+    const browserSessionToken = req.cookies.get(SESSION_TOKEN_COOKIE)?.value
+    if (
+      userData.active_session_token &&
+      browserSessionToken !== userData.active_session_token
+    ) {
+      await supabase.auth.signOut()
+      const response = redirectToLogin(req, 'session_replaced')
+      response.cookies.delete(SESSION_TOKEN_COOKIE)
+      return response
     }
 
     // Admin route protection - updated logic

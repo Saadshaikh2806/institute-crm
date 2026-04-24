@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { type NextRequest } from 'next/server'
+import { SESSION_TOKEN_COOKIE } from '@/lib/single-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,10 +19,12 @@ export async function POST(request: NextRequest) {
     }, { status: 500 })
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     success: true,
     message: 'Signed out successfully'
   })
+  response.cookies.delete(SESSION_TOKEN_COOKIE)
+  return response
 }
 
 // Handle GET requests to redirect to home

@@ -8,6 +8,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
 import { useCRMStore } from "@/store/crm-store"
 import { isInstalledPWA } from "@/lib/utils"
+import { clearBrowserSessionToken } from "@/lib/single-session"
 
 export function AdminHeader() {
   const router = useRouter()
@@ -36,6 +37,7 @@ export function AdminHeader() {
     try {
       // Clear the store data first
       useCRMStore.getState().clearStore()
+      clearBrowserSessionToken()
       
       const { error } = await supabase.auth.signOut()
       if (error) throw error

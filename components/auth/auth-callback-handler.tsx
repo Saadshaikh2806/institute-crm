@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createSessionToken, setBrowserSessionToken } from '@/lib/single-session'
 
 export function AuthCallbackHandler() {
   const router = useRouter()
@@ -68,11 +69,18 @@ export function AuthCallbackHandler() {
             return
           }
 
-          // Update last login
+          const sessionToken = createSessionToken()
+
+          // Update last login and mark this browser as the only active session
           await supabase
             .from('crm_users')
-            .update({ last_login: new Date().toISOString() })
+            .update({
+              last_login: new Date().toISOString(),
+              active_session_token: sessionToken
+            })
             .eq('email', userData.email)
+
+          setBrowserSessionToken(sessionToken)
 
           // Clear the hash from the URL without triggering a refresh
           window.history.replaceState(null, '', window.location.pathname)

@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { createSessionToken, SESSION_TOKEN_COOKIE } from '@/lib/single-session'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -42,15 +43,26 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${requestUrl.origin}/login?error=inactive`)
       }
 
-      // Update last login
+      const sessionToken = createSessionToken()
+
+      // Update last login and mark this browser as the only active session
       await supabase
         .from('crm_users')
-        .update({ last_login: new Date().toISOString() })
+        .update({
+          last_login: new Date().toISOString(),
+          active_session_token: sessionToken
+        })
         .eq('email', session.user.email)
 
       // Always redirect admin to admin panel, regular users to dashboard
       const redirectPath = user.role === 'admin' ? '/admin' : '/'
-      return NextResponse.redirect(`${requestUrl.origin}${redirectPath}`)
+      const response = NextResponse.redirect(`${requestUrl.origin}${redirectPath}`)
+      response.cookies.set(SESSION_TOKEN_COOKIE, sessionToken, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax'
+      })
+      return response
     } catch (error) {
       console.error('Callback error:', error)
       return NextResponse.redirect(`${requestUrl.origin}/login?error=callback`)
