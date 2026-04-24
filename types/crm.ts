@@ -9,7 +9,7 @@ export interface Customer {
   team?: string
   remarks?: string
   source: string
-  status: "lead" | "active" | "inactive"
+  status: "lead" | "active" | "inactive" | "admission_done"
   leadScore: number
   engagement: number
   interestLevel: number

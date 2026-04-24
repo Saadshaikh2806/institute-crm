@@ -103,6 +103,16 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const normalizeStatus = (status?: string) => {
+    const normalized = status?.trim().toLowerCase().replace(/[\s-]+/g, '_')
+
+    return normalized === 'active' ||
+      normalized === 'inactive' ||
+      normalized === 'admission_done'
+      ? normalized
+      : 'lead'
+  }
+
   const handleFileSelect = (file: File) => {
     if (!file) return
 
@@ -273,10 +283,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
             team: record.team || '',
             remarks: record.remarks || record.remark || '',
             source: record.source || record.leadsource || record['lead source'] || 'Other',
-            status: (record.status?.toLowerCase() === 'active' ||
-              record.status?.toLowerCase() === 'inactive')
-              ? record.status.toLowerCase()
-              : 'lead',
+            status: normalizeStatus(record.status),
             leadScore: 0,
             engagement: 0,
             interestLevel: 0,
@@ -447,6 +454,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                     <SelectItem value="lead">Lead</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="admission_done">Admission Done</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

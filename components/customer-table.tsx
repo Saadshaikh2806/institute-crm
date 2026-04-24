@@ -26,6 +26,8 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null)
   const { deleteCustomer } = useCRMStore()
   const tableContainerRef = useRef<HTMLDivElement>(null)
+  const formatStatus = (status: Customer["status"]) =>
+    status === "admission_done" ? "Admission Done" : status
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((customer) => {
@@ -219,7 +221,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize bg-gray-100 text-gray-800">
-                      {customer.status}
+                      {formatStatus(customer.status)}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
