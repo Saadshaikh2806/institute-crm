@@ -93,6 +93,7 @@ export function UserManagement() {
           full_name: newUserFullName,
           role: "user",
           is_active: true,
+          plain_password: newUserPassword,
         },
       ])
 

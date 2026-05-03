@@ -18,7 +18,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
-import { Users, FileText, CheckCircle, Clock, Search, RefreshCw, KeyRound, Eye, EyeOff } from "lucide-react"
+import { Users, FileText, CheckCircle, Clock, Search, RefreshCw, KeyRound, Eye, EyeOff, Download } from "lucide-react"
 import type { UserStats } from "@/types/crm"
 import { logActivity } from "@/lib/activity-logger"
 
@@ -41,6 +41,7 @@ export function UserOverview() {
     const [users, setUsers] = useState<UserWithStats[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
+    const [isDownloading, setIsDownloading] = useState(false)
 
     // Reset password modal state
     const [resetModalOpen, setResetModalOpen] = useState(false)
@@ -178,6 +179,31 @@ export function UserOverview() {
         }
     }
 
+    const downloadCredentials = async () => {
+        setIsDownloading(true)
+        try {
+            const res = await fetch("/api/admin/export-credentials")
+            if (!res.ok) {
+                const err = await res.json()
+                throw new Error(err.error || "Failed to export credentials")
+            }
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = `user-credentials-${new Date().toISOString().slice(0, 10)}.csv`
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+            URL.revokeObjectURL(url)
+            toast.success("Credentials downloaded successfully")
+        } catch (error: any) {
+            toast.error(error.message || "Failed to download credentials")
+        } finally {
+            setIsDownloading(false)
+        }
+    }
+
     const filteredUsers = users.filter(user =>
         user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -256,10 +282,21 @@ export function UserOverview() {
                         className="pl-10"
                     />
                 </div>
-                <Button variant="outline" onClick={fetchUsersWithStats} disabled={isLoading}>
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                    Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={fetchUsersWithStats} disabled={isLoading}>
+                        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                    <Button
+                        variant="default"
+                        onClick={downloadCredentials}
+                        disabled={isDownloading}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                        <Download className={`h-4 w-4 ${isDownloading ? 'animate-bounce' : ''}`} />
+                        {isDownloading ? "Downloading..." : "Download Credentials"}
+                    </Button>
+                </div>
             </div>
 
             {/* Users Table */}

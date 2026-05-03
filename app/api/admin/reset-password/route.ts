@@ -42,6 +42,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Also persist plain password in crm_users for the credentials export feature
+    await supabaseAdmin
+      .from("crm_users")
+      .update({ plain_password: newPassword })
+      .eq("auth_user_id", userId)
+
     return NextResponse.json({ success: true })
   } catch (err: any) {
     console.error("Unexpected error:", err)
