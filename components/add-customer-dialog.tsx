@@ -69,7 +69,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       engagement: formData.engagement,
       interestLevel: formData.interestLevel,
       budgetFit: formData.budgetFit,
-      addedBy: formData.addedBy,
+      addedBy: session.user.email || "",
       ...(formData.date ? { customDate: new Date(formData.date).toISOString() } : {})
     };
 
@@ -345,16 +345,6 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
           </TabsList>
           <TabsContent value="single">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="addedBy">Added By *</Label>
-                <Input
-                  id="addedBy"
-                  placeholder="Enter your name or identifier"
-                  value={formData.addedBy}
-                  onChange={(e) => handleChange("addedBy", e.target.value)}
-                  required
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="date">Date Added *</Label>
                 <Input
