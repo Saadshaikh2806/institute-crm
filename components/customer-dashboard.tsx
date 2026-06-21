@@ -166,13 +166,7 @@ export function CustomerDashboard() {
 
   // Update hot leads calculation
   const hotLeads = useMemo(() => {
-    return customers.filter((c) => {
-      if (c.status !== "hot") return false
-      const score = Math.round(
-        (Number(c.engagement) + Number(c.interestLevel) + Number(c.budgetFit)) / 3
-      )
-      return score >= 80
-    }).length
+    return customers.filter((c) => c.status === "hot").length
   }, [customers])
 
   // Force refresh of customers data periodically or after updates
