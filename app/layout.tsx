@@ -4,6 +4,7 @@ import { headers, cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { Toaster } from "sonner"
+import { ServiceWorkerRegister } from '@/components/service-worker-register'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -38,6 +39,7 @@ export default async function RootLayout({
         <link rel="icon" sizes="512x512" href="/icons/icon-512x512.png" />
       </head>
       <body>
+        <ServiceWorkerRegister />
         <AuthProvider initialSession={session}>
           {children}
           <Toaster />
