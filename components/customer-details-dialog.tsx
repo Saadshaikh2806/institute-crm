@@ -387,9 +387,9 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lead">Lead</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="hot">Hot</SelectItem>
+                    <SelectItem value="warm">Warm</SelectItem>
+                    <SelectItem value="cold">Cold</SelectItem>
                     <SelectItem value="admission_done">Admission Done</SelectItem>
                     <SelectItem value="career_counselling_done">Career Counselling Done</SelectItem>
                   </SelectContent>

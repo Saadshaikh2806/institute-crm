@@ -49,7 +49,7 @@ const App = () => {
       email: formData.get('email') as string,
       phone: formData.get('phone') as string || '',
       source: 'direct',
-      status: 'lead'
+      status: 'warm'
     };
 
     console.log('Attempting to insert:', customerData);
