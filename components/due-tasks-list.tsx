@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react"
 import { X, Eye, CheckSquare, Phone } from "lucide-react"
+import { WhatsAppIcon } from "@/components/whatsapp-icon"
+import { getWhatsAppLink } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useCRMStore } from "@/store/crm-store"
@@ -80,8 +82,8 @@ export function DueTasksList({ onClose }: DueTasksListProps) {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-medium text-lg">{customer.name}</h3>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className="flex items-center gap-1"
                     onClick={() => window.open(`tel:${customer.phone}`)}
@@ -89,7 +91,16 @@ export function DueTasksList({ onClose }: DueTasksListProps) {
                     <Phone className="h-3 w-3" />
                     Call
                   </Button>
-                  <Button 
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1 text-green-600 border-green-600 hover:bg-green-50"
+                    onClick={() => window.open(getWhatsAppLink(customer.phone), '_blank')}
+                  >
+                    <WhatsAppIcon className="h-3 w-3" />
+                    WhatsApp
+                  </Button>
+                  <Button
                     variant="outline" 
                     size="sm"
                     onClick={() => setSelectedCustomerId(customer.id)}

@@ -61,6 +61,12 @@ export function downloadCSV(data: any[], filename: string) {
   document.body.removeChild(link)
 }
 
+export function getWhatsAppLink(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  const withCountryCode = digits.length === 10 ? `91${digits}` : digits
+  return `https://wa.me/${withCountryCode}`
+}
+
 export function isInstalledPWA(): boolean {
   if (typeof window === 'undefined') return false
   

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
-import { UserPlus, Search, RefreshCw } from "lucide-react"
+import { UserPlus, Search, RefreshCw, X } from "lucide-react"
 
 interface NewCustomerRow {
     id: string
@@ -26,6 +26,7 @@ export function NewCustomers() {
     const [customers, setCustomers] = useState<NewCustomerRow[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
+    const [selectedDate, setSelectedDate] = useState("")
 
     useEffect(() => {
         fetchNewCustomers()
@@ -70,24 +71,30 @@ export function NewCustomers() {
         }
     }
 
-    const filteredCustomers = customers.filter(c =>
-        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.added_by_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.added_by_email?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filteredCustomers = customers.filter(c => {
+        const matchesSearch =
+            c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            c.added_by_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            c.added_by_email?.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const addedToday = customers.filter(c => {
-        const created = new Date(c.created_at)
-        const now = new Date()
-        return created.toDateString() === now.toDateString()
-    }).length
+        const matchesDate = !selectedDate ||
+            new Date(c.created_at).toLocaleDateString('en-CA') === selectedDate
+
+        return matchesSearch && matchesDate
+    })
+
+    const addedOnSelectedDate = selectedDate
+        ? customers.filter(c => new Date(c.created_at).toLocaleDateString('en-CA') === selectedDate).length
+        : customers.length
 
     const getStatusBadgeColor = (status: string) => {
         switch (status) {
-            case 'new': return 'bg-blue-100 text-blue-800'
-            case 'contacted': return 'bg-yellow-100 text-yellow-800'
-            case 'converted': return 'bg-green-100 text-green-800'
+            case 'lead': return 'bg-blue-100 text-blue-800'
+            case 'active': return 'bg-yellow-100 text-yellow-800'
+            case 'admission_done': return 'bg-green-100 text-green-800'
+            case 'career_counselling_done': return 'bg-purple-100 text-purple-800'
+            case 'inactive': return 'bg-gray-100 text-gray-800'
             default: return 'bg-gray-100 text-gray-800'
         }
     }
@@ -106,24 +113,42 @@ export function NewCustomers() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Added Today</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            {selectedDate ? `Added on ${selectedDate}` : "Added (all time)"}
+                        </CardTitle>
                         <UserPlus className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{addedToday}</div>
+                        <div className="text-2xl font-bold">{addedOnSelectedDate}</div>
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="flex items-center justify-between">
-                <div className="relative w-72">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search customer or added-by..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                    />
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    <div className="relative w-72">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search customer or added-by..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    <div className="relative">
+                        <Input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="w-44"
+                        />
+                    </div>
+                    {selectedDate && (
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedDate("")}>
+                            <X className="h-4 w-4 mr-1" />
+                            Clear
+                        </Button>
+                    )}
                 </div>
                 <Button variant="outline" onClick={fetchNewCustomers} disabled={isLoading}>
                     <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
