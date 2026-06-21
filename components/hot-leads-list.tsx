@@ -18,11 +18,7 @@ export function HotLeadsList({ onClose }: HotLeadsListProps) {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
 
   const hotLeads = useMemo(() => {
-    return customers.filter((c) => {
-      if (c.status !== "hot") return false
-      const score = calculateLeadScore(c.engagement, c.interestLevel, c.budgetFit)
-      return score >= 80
-    })
+    return customers.filter((c) => c.status === "hot")
   }, [customers])
 
   if (hotLeads.length === 0) return null
