@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { CustomerDetailsDialog } from "@/components/customer-details-dialog"
 import { DueTasksList } from "./due-tasks-list"
+import { NotificationPermission } from "./notification-permission"
 import type { Task } from "@/types/crm"  // Add this import at the top with other imports
 import { clearBrowserSessionToken } from "@/lib/single-session"
 
@@ -255,6 +256,7 @@ export function CustomerDashboard() {
             <UserPlus className="mr-2 h-4 w-4" />
             Add Customer
           </Button>
+          {isPWA && <NotificationPermission />}
           {/* Only show sign out button if not running as installed PWA */}
           {!isPWA && (
             <Button 
