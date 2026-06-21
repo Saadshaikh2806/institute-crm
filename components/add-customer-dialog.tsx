@@ -36,7 +36,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     engagement: 0,
     interestLevel: 0,
     budgetFit: 0,
-    addedBy: ""
+    addedBy: "",
+    date: ""
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -68,7 +69,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       engagement: formData.engagement,
       interestLevel: formData.interestLevel,
       budgetFit: formData.budgetFit,
-      addedBy: formData.addedBy
+      addedBy: formData.addedBy,
+      ...(formData.date ? { customDate: new Date(formData.date).toISOString() } : {})
     };
 
     try {
@@ -91,7 +93,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
         engagement: 0,
         interestLevel: 0,
         budgetFit: 0,
-        addedBy: ""
+        addedBy: "",
+        date: ""
       });
     } catch (error: any) {
       console.error("Error adding customer:", error);
@@ -351,6 +354,18 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   onChange={(e) => handleChange("addedBy", e.target.value)}
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date">Date Added (Optional)</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleChange("date", e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave blank to use the current date and time
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
