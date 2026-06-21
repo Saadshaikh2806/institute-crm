@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { LogOut, Users, Activity, BarChart3 } from "lucide-react"
+import { LogOut, Users, Activity, BarChart3, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
@@ -62,6 +62,10 @@ export function SuperAdminHeader({ activeTab, onTabChange }: SuperAdminHeaderPro
                             <TabsTrigger value="users" className="text-white data-[state=active]:bg-white data-[state=active]:text-purple-600">
                                 <Users className="h-4 w-4 mr-2" />
                                 Users
+                            </TabsTrigger>
+                            <TabsTrigger value="new-customers" className="text-white data-[state=active]:bg-white data-[state=active]:text-purple-600">
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                New Customers
                             </TabsTrigger>
                             <TabsTrigger value="activity" className="text-white data-[state=active]:bg-white data-[state=active]:text-purple-600">
                                 <Activity className="h-4 w-4 mr-2" />

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { SuperAdminHeader } from "@/components/super-admin/super-admin-header"
 import { UserOverview } from "@/components/super-admin/user-overview"
+import { NewCustomers } from "@/components/super-admin/new-customers"
 import { ActivityLogs } from "@/components/super-admin/activity-logs"
 import { ActivityAnalytics } from "@/components/super-admin/activity-analytics"
 
@@ -14,6 +15,7 @@ export function SuperAdminDashboard() {
             <SuperAdminHeader activeTab={activeTab} onTabChange={setActiveTab} />
             <main className="flex-1 p-6">
                 {activeTab === "users" && <UserOverview />}
+                {activeTab === "new-customers" && <NewCustomers />}
                 {activeTab === "activity" && <ActivityLogs />}
                 {activeTab === "analytics" && <ActivityAnalytics />}
             </main>
