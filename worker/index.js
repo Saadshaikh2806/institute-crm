@@ -1,5 +1,3 @@
-self.__WB_MANIFEST
-
 self.addEventListener("push", (event) => {
   let data = { title: "Institute CRM", body: "You have a notification", url: "/" }
   try {
