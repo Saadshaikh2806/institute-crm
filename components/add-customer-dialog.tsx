@@ -36,7 +36,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     engagement: 0,
     interestLevel: 0,
     budgetFit: 0,
-    addedBy: ""
+    addedBy: "",
+    date: ""
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -68,7 +69,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       engagement: formData.engagement,
       interestLevel: formData.interestLevel,
       budgetFit: formData.budgetFit,
-      addedBy: formData.addedBy
+      addedBy: session.user.email || "",
+      ...(formData.date ? { customDate: new Date(formData.date).toISOString() } : {})
     };
 
     try {
@@ -91,7 +93,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
         engagement: 0,
         interestLevel: 0,
         budgetFit: 0,
-        addedBy: ""
+        addedBy: "",
+        date: ""
       });
     } catch (error: any) {
       console.error("Error adding customer:", error);
@@ -343,12 +346,12 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
           <TabsContent value="single">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="addedBy">Added By *</Label>
+                <Label htmlFor="date">Date Added *</Label>
                 <Input
-                  id="addedBy"
-                  placeholder="Enter your name or identifier"
-                  value={formData.addedBy}
-                  onChange={(e) => handleChange("addedBy", e.target.value)}
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleChange("date", e.target.value)}
                   required
                 />
               </div>

@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/daily-emails",
       "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/public/cron/due-task-notifications",
+      "schedule": "55 8 * * *"
     }
   ],
   "cleanUrls": true
