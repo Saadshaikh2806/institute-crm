@@ -2,8 +2,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
   register: true,
-  skipWaiting: true,
-  swSrc: 'worker/index.js'
+  skipWaiting: true
 })
 
 /** @type {import('next').NextConfig} */
