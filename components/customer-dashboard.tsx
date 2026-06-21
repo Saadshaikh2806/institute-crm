@@ -144,7 +144,7 @@ export function CustomerDashboard() {
 
   const totalCustomers = customers.length
   const newLeads = customers.filter((c) => 
-    c.status === "lead" && isWithinLast30Days(c.createdAt)
+    c.status === "warm" && isWithinLast30Days(c.createdAt)
   ).length
   
   // Move the dueTasks calculation into a useEffect to ensure it updates when tasks change
@@ -167,7 +167,7 @@ export function CustomerDashboard() {
   // Update hot leads calculation
   const hotLeads = useMemo(() => {
     return customers.filter((c) => {
-      if (c.status !== "lead") return false
+      if (c.status !== "hot") return false
       const score = Math.round(
         (Number(c.engagement) + Number(c.interestLevel) + Number(c.budgetFit)) / 3
       )

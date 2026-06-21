@@ -31,7 +31,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     team: "",
     remarks: "",
     source: "",
-    status: "lead" as const,
+    status: "warm" as const,
     leadScore: 0,
     engagement: 0,
     interestLevel: 0,
@@ -64,7 +64,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       team: formData.team,
       remarks: formData.remarks,
       source: formData.source || 'direct',
-      status: formData.status || 'lead',
+      status: formData.status || 'warm',
       leadScore: formData.leadScore,
       engagement: formData.engagement,
       interestLevel: formData.interestLevel,
@@ -88,7 +88,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
         team: "",
         remarks: "",
         source: "",
-        status: "lead",
+        status: "warm",
         leadScore: 0,
         engagement: 0,
         interestLevel: 0,
@@ -109,12 +109,13 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
   const normalizeStatus = (status?: string) => {
     const normalized = status?.trim().toLowerCase().replace(/[\s-]+/g, '_')
 
-    return normalized === 'active' ||
-      normalized === 'inactive' ||
+    return normalized === 'warm' ||
+      normalized === 'cold' ||
+      normalized === 'hot' ||
       normalized === 'admission_done' ||
       normalized === 'career_counselling_done'
       ? normalized
-      : 'lead'
+      : 'warm'
   }
 
   const handleFileSelect = (file: File) => {
@@ -455,9 +456,9 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lead">Lead</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="hot">Hot</SelectItem>
+                    <SelectItem value="warm">Warm</SelectItem>
+                    <SelectItem value="cold">Cold</SelectItem>
                     <SelectItem value="admission_done">Admission Done</SelectItem>
                     <SelectItem value="career_counselling_done">Career Counselling Done</SelectItem>
                   </SelectContent>
@@ -503,8 +504,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   onClick={() => {
                     const sampleData = [
                       ['Date', 'Name', 'Phone', 'STD/Board', 'Counsellor Name', 'Lead Source', 'Team', 'Remarks', 'Email', 'School', 'Status'],
-                      ['30/01/2026', 'John Doe', '1234567890', '10th', 'Poonam Maam', 'Website', 'Sangeeta', 'Follow up required', 'john@example.com', 'ABC School', 'lead'],
-                      ['29/01/2026', 'Jane Smith', '0987654321', '12th', 'Leena Maam', 'Referral', 'Kavita', 'Interested in admission', 'jane@example.com', 'XYZ School', 'lead']
+                      ['30/01/2026', 'John Doe', '1234567890', '10th', 'Poonam Maam', 'Website', 'Sangeeta', 'Follow up required', 'john@example.com', 'ABC School', 'warm'],
+                      ['29/01/2026', 'Jane Smith', '0987654321', '12th', 'Leena Maam', 'Referral', 'Kavita', 'Interested in admission', 'jane@example.com', 'XYZ School', 'warm']
                     ]
 
                     const csvContent = sampleData

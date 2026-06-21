@@ -268,12 +268,28 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         (Number(scores.engagement) + Number(scores.interestLevel) + Number(scores.budgetFit)) / 3
       );
 
-      const updateData = {
+      const existingCustomer = get().customers.find((customer) => customer.id === id)
+      const isLockedStatus = existingCustomer?.status === 'admission_done' || existingCustomer?.status === 'career_counselling_done'
+
+      let nextStatus = existingCustomer?.status
+      if (!isLockedStatus) {
+        if (calculatedLeadScore >= 80) {
+          nextStatus = 'hot'
+        } else if (existingCustomer?.status === 'hot') {
+          nextStatus = 'warm'
+        }
+      }
+
+      const updateData: any = {
         lead_score: calculatedLeadScore,
         engagement: Number(scores.engagement),
         interest_level: Number(scores.interestLevel),
         budget_fit: Number(scores.budgetFit),
         updated_at: new Date().toISOString()
+      }
+
+      if (nextStatus !== existingCustomer?.status) {
+        updateData.status = nextStatus
       }
 
       const { error } = await supabase
@@ -294,6 +310,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
               engagement: Number(scores.engagement),
               interestLevel: Number(scores.interestLevel),
               budgetFit: Number(scores.budgetFit),
+              status: nextStatus ?? customer.status,
               updatedAt: new Date()
             }
             : customer
