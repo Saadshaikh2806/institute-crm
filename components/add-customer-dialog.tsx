@@ -356,16 +356,14 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="date">Date Added (Optional)</Label>
+                <Label htmlFor="date">Date Added *</Label>
                 <Input
                   id="date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => handleChange("date", e.target.value)}
+                  required
                 />
-                <p className="text-xs text-muted-foreground">
-                  Leave blank to use the current date and time
-                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
