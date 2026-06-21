@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/public/cron/due-task-notifications",
-      "schedule": "30 3 * * *"
+      "schedule": "55 8 * * *"
     }
   ],
   "cleanUrls": true
