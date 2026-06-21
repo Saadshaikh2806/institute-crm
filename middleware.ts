@@ -148,6 +148,6 @@ function redirectToLogin(req: NextRequest, error?: string) {
 
 export const config = {
   matcher: [
-    '/((?!api/public|_next/static|_next/image|favicon.ico).*)'
+    '/((?!api/public|_next/static|_next/image|favicon\\.ico|sw\\.js|workbox-.*\\.js|worker-.*\\.js|manifest\\.json|icons/).*)'
   ]
 }
