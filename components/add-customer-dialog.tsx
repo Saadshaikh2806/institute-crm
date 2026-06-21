@@ -108,7 +108,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
     return normalized === 'active' ||
       normalized === 'inactive' ||
-      normalized === 'admission_done'
+      normalized === 'admission_done' ||
+      normalized === 'career_counselling_done'
       ? normalized
       : 'lead'
   }
@@ -455,6 +456,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
                     <SelectItem value="admission_done">Admission Done</SelectItem>
+                    <SelectItem value="career_counselling_done">Career Counselling Done</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

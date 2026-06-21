@@ -1,6 +1,8 @@
 "use client"
 
 import { Eye, Trash2, Download } from "lucide-react"
+import { WhatsAppIcon } from "@/components/whatsapp-icon"
+import { getWhatsAppLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CustomerDetailsDialog } from "@/components/customer-details-dialog"
@@ -26,8 +28,11 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null)
   const { deleteCustomer } = useCRMStore()
   const tableContainerRef = useRef<HTMLDivElement>(null)
-  const formatStatus = (status: Customer["status"]) =>
-    status === "admission_done" ? "Admission Done" : status
+  const formatStatus = (status: Customer["status"]) => {
+    if (status === "admission_done") return "Admission Done"
+    if (status === "career_counselling_done") return "Career Counselling Done"
+    return status
+  }
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((customer) => {
@@ -205,7 +210,22 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
                     })}
                   </TableCell>
                   <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell className="text-gray-600">{customer.phone}</TableCell>
+                  <TableCell className="text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <span>{customer.phone}</span>
+                      {customer.phone && (
+                        <a
+                          href={getWhatsAppLink(customer.phone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                        >
+                          <WhatsAppIcon className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{customer.stdBoard || "—"}</TableCell>
                   <TableCell>{customer.counsellorName || "—"}</TableCell>
                   <TableCell>{customer.source || "—"}</TableCell>

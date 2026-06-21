@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { X, CalendarIcon, Trash2, Phone } from "lucide-react" // Add Phone to imports
+import { WhatsAppIcon } from "@/components/whatsapp-icon"
+import { getWhatsAppLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -321,12 +323,22 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                       <div className="flex items-center gap-2">
                         <p className="text-sm text-gray-600">{customer?.phone}</p>
                         {customer?.phone && (
-                          <a
-                            href={`tel:${customer.phone}`}
-                            className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
-                          >
-                            <Phone className="h-4 w-4" />
-                          </a>
+                          <>
+                            <a
+                              href={`tel:${customer.phone}`}
+                              className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                            >
+                              <Phone className="h-4 w-4" />
+                            </a>
+                            <a
+                              href={getWhatsAppLink(customer.phone)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                            >
+                              <WhatsAppIcon className="h-4 w-4" />
+                            </a>
+                          </>
                         )}
                       </div>
                     )}
@@ -379,6 +391,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
                     <SelectItem value="admission_done">Admission Done</SelectItem>
+                    <SelectItem value="career_counselling_done">Career Counselling Done</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
