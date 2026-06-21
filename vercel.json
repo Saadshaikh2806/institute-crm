@@ -5,12 +5,12 @@
   "installCommand": "npm install",
   "crons": [
     {
-      "path": "/api/cron/daily-emails",
-      "schedule": "30 2 * * *"
+      "path": "/api/public/cron/due-task-notifications",
+      "schedule": "30 4 * * *"
     },
     {
       "path": "/api/public/cron/due-task-notifications",
-      "schedule": "37 10 * * *"
+      "schedule": "30 10 * * *"
     }
   ],
   "cleanUrls": true
