@@ -3,6 +3,8 @@ export interface Customer {
   name: string
   email: string
   phone: string
+  phone2?: string
+  phone3?: string
   school?: string
   stdBoard?: string
   counsellorName?: string

@@ -45,6 +45,8 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
         customer.name,
         customer.email,
         customer.phone,
+        customer.phone2,
+        customer.phone3,
         customer.school,
         customer.source,
         customer.status
@@ -211,19 +213,23 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
                   </TableCell>
                   <TableCell className="font-medium">{customer.name}</TableCell>
                   <TableCell className="text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span>{customer.phone}</span>
-                      {customer.phone && (
-                        <a
-                          href={getWhatsAppLink(customer.phone)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
-                        >
-                          <WhatsAppIcon className="h-4 w-4" />
-                        </a>
-                      )}
+                    <div className="flex flex-col gap-1">
+                      {[customer.phone, customer.phone2, customer.phone3]
+                        .filter(Boolean)
+                        .map((phone, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span>{phone}</span>
+                            <a
+                              href={getWhatsAppLink(phone!)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                            >
+                              <WhatsAppIcon className="h-4 w-4" />
+                            </a>
+                          </div>
+                        ))}
                     </div>
                   </TableCell>
                   <TableCell>{customer.stdBoard || "—"}</TableCell>

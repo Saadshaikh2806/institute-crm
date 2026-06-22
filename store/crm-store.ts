@@ -9,6 +9,8 @@ const mapCustomerData = (data: any): Customer => ({
   name: data.name,
   email: data.email,
   phone: data.phone,
+  phone2: data.phone2 || undefined,
+  phone3: data.phone3 || undefined,
   school: data.school,
   stdBoard: data.std_board,
   counsellorName: data.counsellor_name,
@@ -52,6 +54,8 @@ interface CRMStore {
       name: string
       email: string
       phone: string
+      phone2?: string
+      phone3?: string
       school?: string
       source: string
     }
@@ -120,6 +124,8 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         name: customerData.name,
         email: customerData.email,
         phone: customerData.phone,
+        phone2: customerData.phone2 || null,
+        phone3: customerData.phone3 || null,
         school: customerData.school,
         std_board: customerData.stdBoard,
         counsellor_name: customerData.counsellorName,
@@ -153,6 +159,8 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           name: data.name,
           email: data.email,
           phone: data.phone,
+          phone2: data.phone2 || undefined,
+          phone3: data.phone3 || undefined,
           school: data.school,
           stdBoard: data.std_board,
           counsellorName: data.counsellor_name,
@@ -743,6 +751,8 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           name: details.name,
           email: details.email,
           phone: details.phone,
+          phone2: details.phone2 || null,
+          phone3: details.phone3 || null,
           school: details.school,
           source: details.source,
           updated_at: new Date().toISOString()

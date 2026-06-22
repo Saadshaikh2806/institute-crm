@@ -25,6 +25,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
     name: "",
     email: "",
     phone: "",
+    phone2: "",
+    phone3: "",
     school: "",
     stdBoard: "",
     counsellorName: "",
@@ -58,6 +60,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
+      phone2: formData.phone2,
+      phone3: formData.phone3,
       school: formData.school,
       stdBoard: formData.stdBoard,
       counsellorName: formData.counsellorName,
@@ -82,6 +86,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
         name: "",
         email: "",
         phone: "",
+        phone2: "",
+        phone3: "",
         school: "",
         stdBoard: "",
         counsellorName: "",
@@ -278,10 +284,24 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
             }
           }
 
+          // Support up to 3 phone numbers per row: either dedicated
+          // Phone/Phone2/Phone3 columns, or multiple numbers separated by
+          // a comma/semicolon/slash within the Phone column.
+          const phoneParts = String(record.phone || '')
+            .split(/[,;/]+/)
+            .map((p: string) => p.trim())
+            .filter(Boolean)
+
+          const phone = phoneParts[0] || ''
+          const phone2 = record.phone2 || record['phone 2'] || phoneParts[1] || ''
+          const phone3 = record.phone3 || record['phone 3'] || phoneParts[2] || ''
+
           await addCustomer({
             name: record.name,
             email: record.email || '',
-            phone: record.phone,
+            phone,
+            phone2,
+            phone3,
             school: record.school || '',
             stdBoard: record.stdboard || record['std/board'] || '',
             counsellorName: record.counsellorname || record['counsellor name'] || '',
@@ -384,6 +404,24 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   value={formData.phone}
                   onChange={(e) => handleChange("phone", e.target.value)}
                   required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone2">Phone 2 (Optional)</Label>
+                <Input
+                  id="phone2"
+                  placeholder="Enter alternate phone number"
+                  value={formData.phone2}
+                  onChange={(e) => handleChange("phone2", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone3">Phone 3 (Optional)</Label>
+                <Input
+                  id="phone3"
+                  placeholder="Enter another phone number"
+                  value={formData.phone3}
+                  onChange={(e) => handleChange("phone3", e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -503,9 +541,9 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                   variant="link"
                   onClick={() => {
                     const sampleData = [
-                      ['Date', 'Name', 'Phone', 'STD/Board', 'Counsellor Name', 'Lead Source', 'Team', 'Remarks', 'Email', 'School', 'Status'],
-                      ['30/01/2026', 'John Doe', '1234567890', '10th', 'Poonam Maam', 'Website', 'Sangeeta', 'Follow up required', 'john@example.com', 'ABC School', 'warm'],
-                      ['29/01/2026', 'Jane Smith', '0987654321', '12th', 'Leena Maam', 'Referral', 'Kavita', 'Interested in admission', 'jane@example.com', 'XYZ School', 'warm']
+                      ['Date', 'Name', 'Phone', 'Phone2', 'Phone3', 'STD/Board', 'Counsellor Name', 'Lead Source', 'Team', 'Remarks', 'Email', 'School', 'Status'],
+                      ['30/01/2026', 'John Doe', '1234567890', '1112223333', '', '10th', 'Poonam Maam', 'Website', 'Sangeeta', 'Follow up required', 'john@example.com', 'ABC School', 'warm'],
+                      ['29/01/2026', 'Jane Smith', '0987654321', '', '', '12th', 'Leena Maam', 'Referral', 'Kavita', 'Interested in admission', 'jane@example.com', 'XYZ School', 'warm']
                     ]
 
                     const csvContent = sampleData
@@ -581,6 +619,9 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                 Supported formats: CSV, Excel (.xlsx)
                 <br />
                 Maximum file size: 5MB
+                <br />
+                Up to 3 phone numbers per customer: use Phone, Phone2, Phone3 columns,
+                or separate numbers with a comma/semicolon in the Phone column
               </p>
             </div>
           </TabsContent>

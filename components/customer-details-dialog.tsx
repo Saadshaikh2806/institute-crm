@@ -68,6 +68,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
     name: '',
     email: '',
     phone: '',
+    phone2: '',
+    phone3: '',
     school: '',
     source: ''
   })
@@ -88,6 +90,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
         name: customer.name,
         email: customer.email,
         phone: customer.phone,
+        phone2: customer.phone2 || '',
+        phone3: customer.phone3 || '',
         school: customer.school || '',
         source: customer.source
       })
@@ -332,6 +336,68 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                             </a>
                             <a
                               href={getWhatsAppLink(customer.phone)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                            >
+                              <WhatsAppIcon className="h-4 w-4" />
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Phone 2 (Optional)</Label>
+                    {isEditing ? (
+                      <Input
+                        value={editedDetails.phone2}
+                        onChange={(e) => setEditedDetails(prev => ({ ...prev, phone2: e.target.value }))}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-600">{customer?.phone2 || '-'}</p>
+                        {customer?.phone2 && (
+                          <>
+                            <a
+                              href={`tel:${customer.phone2}`}
+                              className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                            >
+                              <Phone className="h-4 w-4" />
+                            </a>
+                            <a
+                              href={getWhatsAppLink(customer.phone2)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                            >
+                              <WhatsAppIcon className="h-4 w-4" />
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Phone 3 (Optional)</Label>
+                    {isEditing ? (
+                      <Input
+                        value={editedDetails.phone3}
+                        onChange={(e) => setEditedDetails(prev => ({ ...prev, phone3: e.target.value }))}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-600">{customer?.phone3 || '-'}</p>
+                        {customer?.phone3 && (
+                          <>
+                            <a
+                              href={`tel:${customer.phone3}`}
+                              className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                            >
+                              <Phone className="h-4 w-4" />
+                            </a>
+                            <a
+                              href={getWhatsAppLink(customer.phone3)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
