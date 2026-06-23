@@ -474,15 +474,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           createdAt: data[0].created_at
         }
 
-        // Update tasks state immediately and fetch all tasks to ensure consistency
+        // Update tasks state immediately for instant UI feedback
         set((state) => ({
           tasks: [...state.tasks, newTask]
         }))
 
-        // Fetch all tasks to ensure state is in sync
-        await get().fetchAllTasks()
-
-        // Log activity
+        // Log activity right away, before the extra fetch below, so it isn't
+        // at risk of being skipped if the page navigates away while syncing.
         await logActivity({
           actionType: 'task_create',
           entityType: 'task',
@@ -493,6 +491,9 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
             dueDate: newTask.dueDate,
           }
         })
+
+        // Fetch all tasks to ensure state is in sync
+        await get().fetchAllTasks()
 
         toast.success('Task added successfully')
       }

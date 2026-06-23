@@ -42,10 +42,12 @@ export async function logActivity({
             }])
 
         if (error) {
-            console.error("Failed to log activity:", error)
+            console.error("Failed to log activity:", actionType, error)
+        } else {
+            console.log("[activity] logged:", actionType)
         }
     } catch (error) {
-        console.error("Error in logActivity:", error)
+        console.error("Error in logActivity:", actionType, error)
     }
 }
 
