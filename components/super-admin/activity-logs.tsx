@@ -91,10 +91,30 @@ export function ActivityLogs() {
     useEffect(() => {
         fetchLogs()
         fetchUsers()
+
+        // Live updates: prepend new activity the instant it is logged.
+        const channel = supabase
+            .channel("activity-logs-live")
+            .on(
+                "postgres_changes",
+                { event: "INSERT", schema: "public", table: "user_activity_logs" },
+                (payload) => {
+                    setLogs((prev) => [payload.new as ActivityLogEntry, ...prev].slice(0, 500))
+                }
+            )
+            .subscribe()
+
+        // Safety net: keeps the feed fresh even if Realtime isn't enabled/connected.
+        const poll = setInterval(() => fetchLogs(true), 20_000)
+
+        return () => {
+            supabase.removeChannel(channel)
+            clearInterval(poll)
+        }
     }, [])
 
-    const fetchLogs = async () => {
-        setIsLoading(true)
+    const fetchLogs = async (silent = false) => {
+        if (!silent) setIsLoading(true)
         try {
             const { data, error } = await supabase
                 .from('user_activity_logs')
@@ -107,9 +127,9 @@ export function ActivityLogs() {
             setLogs(data || [])
         } catch (error) {
             console.error('Error fetching activity logs:', error)
-            toast.error("Failed to fetch activity logs")
+            if (!silent) toast.error("Failed to fetch activity logs")
         } finally {
-            setIsLoading(false)
+            if (!silent) setIsLoading(false)
         }
     }
 
@@ -282,7 +302,7 @@ export function ActivityLogs() {
                 {(dateFrom || dateTo) && (
                     <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo("") }}>Clear dates</Button>
                 )}
-                <Button variant="outline" onClick={fetchLogs} disabled={isLoading}>
+                <Button variant="outline" onClick={() => fetchLogs()} disabled={isLoading}>
                     <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                     Refresh
                 </Button>

@@ -59,8 +59,25 @@ export function OnlineNow() {
 
     useEffect(() => {
         fetchData()
+        // Poll keeps the time-based presence ("online within 2 min") fresh.
         const interval = setInterval(fetchData, REFRESH_MS)
-        return () => clearInterval(interval)
+
+        // Realtime makes new activity appear instantly in the live feed.
+        const channel = supabase
+            .channel("overview-live-activity")
+            .on(
+                "postgres_changes",
+                { event: "INSERT", schema: "public", table: "user_activity_logs" },
+                (payload) => {
+                    setLogs((prev) => [payload.new as LogRow, ...prev].slice(0, 40))
+                }
+            )
+            .subscribe()
+
+        return () => {
+            clearInterval(interval)
+            supabase.removeChannel(channel)
+        }
     }, [fetchData])
 
     const userByAuthId = useMemo(() => {

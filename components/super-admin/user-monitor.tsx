@@ -122,11 +122,32 @@ export function UserMonitor({ userId }: { userId: string }) {
 
     useEffect(() => {
         fetchAll()
+
+        // Live updates for this user's activity as it happens.
+        const channel = supabase
+            .channel(`user-monitor-${userId}`)
+            .on(
+                "postgres_changes",
+                { event: "INSERT", schema: "public", table: "user_activity_logs", filter: `user_id=eq.${userId}` },
+                (payload) => {
+                    setLogs((prev) => [payload.new as ActivityRow, ...prev])
+                }
+            )
+            .subscribe()
+
+        // Safety net: silently refreshes sessions/KPIs (online status, time today)
+        // and reconciles the timeline even if Realtime isn't enabled/connected.
+        const poll = setInterval(() => fetchAll(true), 20_000)
+
+        return () => {
+            supabase.removeChannel(channel)
+            clearInterval(poll)
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId])
 
-    const fetchAll = async () => {
-        setIsLoading(true)
+    const fetchAll = async (silent = false) => {
+        if (!silent) setIsLoading(true)
         try {
             const [{ data: userData }, { data: logData }, { data: sessionData }, { data: custData }, { data: taskData }] =
                 await Promise.all([
@@ -147,9 +168,9 @@ export function UserMonitor({ userId }: { userId: string }) {
             })
         } catch (error) {
             console.error("Error loading user monitor:", error)
-            toast.error("Failed to load user activity")
+            if (!silent) toast.error("Failed to load user activity")
         } finally {
-            setIsLoading(false)
+            if (!silent) setIsLoading(false)
         }
     }
 
@@ -323,7 +344,7 @@ export function UserMonitor({ userId }: { userId: string }) {
                         <Button variant="secondary" size="sm" onClick={() => setResetOpen(true)}>
                             <KeyRound className="h-4 w-4 mr-1" /> Reset Password
                         </Button>
-                        <Button variant="secondary" size="sm" onClick={fetchAll}>
+                        <Button variant="secondary" size="sm" onClick={() => fetchAll()}>
                             <RefreshCw className="h-4 w-4" />
                         </Button>
                     </div>
