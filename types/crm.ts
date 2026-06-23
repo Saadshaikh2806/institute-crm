@@ -66,8 +66,10 @@ export type ActivityActionType =
   | "customer_update"
   | "customer_delete"
   | "customer_status_change"
+  | "lead_score_update"
   | "task_create"
   | "task_complete"
+  | "task_reopen"
   | "task_delete"
   | "interaction_add"
   | "tag_add"
@@ -77,6 +79,31 @@ export type ActivityActionType =
   | "user_deactivate"
 
 export type EntityType = "customer" | "task" | "interaction" | "tag" | "user"
+
+/** A single before/after change recorded for an update action. */
+export interface FieldChange {
+  from: any
+  to: any
+}
+
+/** Shape of the `details` JSON stored alongside an activity log. */
+export interface ActivityDetails {
+  entityName?: string
+  changes?: Record<string, FieldChange>
+  [key: string]: any
+}
+
+export interface UserSession {
+  id: string
+  userId: string
+  userEmail?: string
+  sessionToken?: string
+  loginAt: string
+  lastSeenAt: string
+  logoutAt?: string | null
+  endedReason?: string | null
+  userAgent?: string | null
+}
 
 export interface UserStats {
   userId: string

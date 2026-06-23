@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { logActivity } from "@/lib/activity-logger"
 import { createSessionToken, setBrowserSessionToken } from "@/lib/single-session"
+import { startSession } from "@/lib/session-tracker"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -114,8 +115,11 @@ export function LoginForm() {
       // Log the login activity
       await logActivity({
         actionType: 'login',
-        details: { email: normalizedEmail, fullName: user.full_name }
+        details: { email: normalizedEmail, fullName: user.full_name, entityName: user.full_name }
       })
+
+      // Open a work session for presence / time-on-app tracking
+      await startSession()
 
       toast.success("Login successful!")
 
