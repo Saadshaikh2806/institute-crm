@@ -277,7 +277,7 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       );
 
       const existingCustomer = get().customers.find((customer) => customer.id === id)
-      const isLockedStatus = existingCustomer?.status === 'admission_done' || existingCustomer?.status === 'career_counselling_done'
+      const isLockedStatus = existingCustomer?.status === 'admission_done' || existingCustomer?.status === 'career_counselling_done' || existingCustomer?.status === 'walk_in_done'
 
       let nextStatus = existingCustomer?.status
       if (!isLockedStatus) {

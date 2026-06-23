@@ -119,7 +119,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
       normalized === 'cold' ||
       normalized === 'hot' ||
       normalized === 'admission_done' ||
-      normalized === 'career_counselling_done'
+      normalized === 'career_counselling_done' ||
+      normalized === 'walk_in_done'
       ? normalized
       : 'warm'
   }
@@ -499,6 +500,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                     <SelectItem value="cold">Cold</SelectItem>
                     <SelectItem value="admission_done">Admission Done</SelectItem>
                     <SelectItem value="career_counselling_done">Career Counselling Done</SelectItem>
+                    <SelectItem value="walk_in_done">Walk In Done</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

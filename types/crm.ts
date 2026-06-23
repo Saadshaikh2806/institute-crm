@@ -11,7 +11,7 @@ export interface Customer {
   team?: string
   remarks?: string
   source: string
-  status: "warm" | "cold" | "hot" | "admission_done" | "career_counselling_done"
+  status: "warm" | "cold" | "hot" | "admission_done" | "career_counselling_done" | "walk_in_done"
   leadScore: number
   engagement: number
   interestLevel: number

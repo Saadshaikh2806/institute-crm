@@ -31,6 +31,7 @@ export function CustomerTable({ searchQuery, downloadButtonProps }: CustomerTabl
   const formatStatus = (status: Customer["status"]) => {
     if (status === "admission_done") return "Admission Done"
     if (status === "career_counselling_done") return "Career Counselling Done"
+    if (status === "walk_in_done") return "Walk In Done"
     return status
   }
 
