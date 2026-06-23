@@ -9,6 +9,8 @@ import { toast } from "sonner"
 import { useCRMStore } from "@/store/crm-store"
 import { isInstalledPWA } from "@/lib/utils"
 import { clearBrowserSessionToken } from "@/lib/single-session"
+import { endSession } from "@/lib/session-tracker"
+import { logActivity } from "@/lib/activity-logger"
 
 export function AdminHeader() {
   const router = useRouter()
@@ -35,10 +37,14 @@ export function AdminHeader() {
 
   const handleSignOut = async () => {
     try {
+      // Record logout + close the work session while still authenticated
+      await logActivity({ actionType: 'logout' })
+      await endSession('logout')
+
       // Clear the store data first
       useCRMStore.getState().clearStore()
       clearBrowserSessionToken()
-      
+
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       

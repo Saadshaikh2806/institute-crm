@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,8 @@ import {
     MessageSquare,
     Tag,
     Activity,
-    Filter
+    Filter,
+    Download
 } from "lucide-react"
 import { getActivityDescription } from "@/lib/activity-logger"
 import type { ActivityActionType, UserActivityLog } from "@/types/crm"
@@ -76,11 +78,14 @@ const actionColors: Record<string, string> = {
 }
 
 export function ActivityLogs() {
+    const router = useRouter()
     const [logs, setLogs] = useState<ActivityLogEntry[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [actionFilter, setActionFilter] = useState<string>("all")
     const [userFilter, setUserFilter] = useState<string>("all")
+    const [dateFrom, setDateFrom] = useState("")
+    const [dateTo, setDateTo] = useState("")
     const [users, setUsers] = useState<{ id: string; email: string }[]>([])
 
     useEffect(() => {
@@ -130,11 +135,35 @@ export function ActivityLogs() {
 
         const matchesAction = actionFilter === "all" || log.action_type === actionFilter
         const matchesUser = userFilter === "all" || log.user_id === userFilter
+        const matchesFrom = !dateFrom || new Date(log.created_at) >= new Date(dateFrom)
+        const matchesTo = !dateTo || new Date(log.created_at) <= new Date(dateTo + "T23:59:59")
 
-        return matchesSearch && matchesAction && matchesUser
+        return matchesSearch && matchesAction && matchesUser && matchesFrom && matchesTo
     })
 
     const uniqueActionTypes = Array.from(new Set(logs.map(l => l.action_type)))
+
+    const exportCsv = () => {
+        const header = ["Time", "User", "Action", "Entity", "Description"]
+        const rows = filteredLogs.map(log => [
+            new Date(log.created_at).toLocaleString(),
+            log.user_email || "",
+            log.action_type,
+            log.entity_type || "",
+            getActivityDescription(log.action_type, log.details || undefined),
+        ])
+        const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`
+        const csv = [header, ...rows].map(r => r.map(escape).join(",")).join("\n")
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `activity-logs-${new Date().toISOString().slice(0, 10)}.csv`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+    }
 
     const getRelativeTime = (dateString: string) => {
         const date = new Date(dateString)
@@ -248,9 +277,18 @@ export function ActivityLogs() {
                         ))}
                     </SelectContent>
                 </Select>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" title="From date" />
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" title="To date" />
+                {(dateFrom || dateTo) && (
+                    <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo("") }}>Clear dates</Button>
+                )}
                 <Button variant="outline" onClick={fetchLogs} disabled={isLoading}>
                     <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                     Refresh
+                </Button>
+                <Button variant="outline" onClick={exportCsv} disabled={filteredLogs.length === 0}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
                 </Button>
             </div>
 
@@ -290,7 +328,12 @@ export function ActivityLogs() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <span className="font-medium">{log.user_email}</span>
+                                            <button
+                                                className="font-medium text-purple-700 hover:underline"
+                                                onClick={() => router.push(`/super-admin/users/${log.user_id}`)}
+                                            >
+                                                {log.user_email}
+                                            </button>
                                         </TableCell>
                                         <TableCell className="max-w-md">
                                             <span className="text-sm text-muted-foreground">

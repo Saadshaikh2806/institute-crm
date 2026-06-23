@@ -2,7 +2,7 @@ import { create } from "zustand"
 import type { Customer, Interaction, Task, Tag } from "@/types/crm"
 import { toast } from "sonner"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { logActivity } from "@/lib/activity-logger"
+import { logActivity, diffObjects } from "@/lib/activity-logger"
 
 const mapCustomerData = (data: any): Customer => ({
   id: data.id,
@@ -186,7 +186,13 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           actionType: 'customer_create',
           entityType: 'customer',
           entityId: newCustomer.id,
-          details: { customerName: newCustomer.name, email: newCustomer.email }
+          details: {
+            entityName: newCustomer.name,
+            email: newCustomer.email,
+            phone: newCustomer.phone,
+            status: newCustomer.status,
+            source: newCustomer.source,
+          }
         })
       }
     } catch (error) {
@@ -202,6 +208,8 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       if (!session?.user?.id) {
         throw new Error('Not authenticated')
       }
+
+      const deletedCustomer = get().customers.find((customer) => customer.id === id)
 
       const { error } = await supabase
         .from('customers')
@@ -220,7 +228,11 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         actionType: 'customer_delete',
         entityType: 'customer',
         entityId: id,
-        details: {}
+        details: {
+          entityName: deletedCustomer?.name,
+          phone: deletedCustomer?.phone,
+          status: deletedCustomer?.status,
+        }
       })
 
       toast.success('Customer deleted successfully')
@@ -237,6 +249,9 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       if (!session?.user?.id) {
         throw new Error('Not authenticated')
       }
+
+      const existingCustomer = get().customers.find((customer) => customer.id === id)
+      const oldStatus = existingCustomer?.status
 
       const { error } = await supabase
         .from('customers')
@@ -256,6 +271,19 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
             : customer
         ),
       }))
+
+      // Log activity
+      if (oldStatus !== status) {
+        await logActivity({
+          actionType: 'customer_status_change',
+          entityType: 'customer',
+          entityId: id,
+          details: {
+            entityName: existingCustomer?.name,
+            changes: { status: { from: oldStatus ?? null, to: status } },
+          }
+        })
+      }
 
       toast.success('Status updated successfully')
     } catch (error) {
@@ -325,6 +353,33 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         ),
       }))
 
+      // Log activity (capture before/after of the score fields and any auto status change)
+      const scoreChanges = diffObjects(
+        {
+          engagement: existingCustomer?.engagement,
+          interestLevel: existingCustomer?.interestLevel,
+          budgetFit: existingCustomer?.budgetFit,
+          leadScore: existingCustomer?.leadScore,
+        },
+        {
+          engagement: Number(scores.engagement),
+          interestLevel: Number(scores.interestLevel),
+          budgetFit: Number(scores.budgetFit),
+          leadScore: calculatedLeadScore,
+        }
+      )
+      if (nextStatus !== existingCustomer?.status) {
+        scoreChanges.status = { from: existingCustomer?.status ?? null, to: nextStatus ?? null }
+      }
+      if (Object.keys(scoreChanges).length > 0) {
+        await logActivity({
+          actionType: 'lead_score_update',
+          entityType: 'customer',
+          entityId: id,
+          details: { entityName: existingCustomer?.name, changes: scoreChanges }
+        })
+      }
+
       toast.success('Lead scores updated successfully')
     } catch (error) {
       console.error('Error updating lead scores:', error)
@@ -364,6 +419,18 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         set((state) => ({
           interactions: [...state.interactions, newInteraction]
         }))
+
+        // Log activity
+        await logActivity({
+          actionType: 'interaction_add',
+          entityType: 'interaction',
+          entityId: newInteraction.id,
+          details: {
+            interactionType: newInteraction.type,
+            customerName: get().customers.find((c) => c.id === newInteraction.customerId)?.name,
+            note: newInteraction.details,
+          }
+        })
 
         toast.success('Interaction added successfully')
       }
@@ -415,6 +482,18 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         // Fetch all tasks to ensure state is in sync
         await get().fetchAllTasks()
 
+        // Log activity
+        await logActivity({
+          actionType: 'task_create',
+          entityType: 'task',
+          entityId: newTask.id,
+          details: {
+            entityName: newTask.title,
+            customerName: get().customers.find((c) => c.id === newTask.customerId)?.name,
+            dueDate: newTask.dueDate,
+          }
+        })
+
         toast.success('Task added successfully')
       }
     } catch (error) {
@@ -449,15 +528,16 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         )
       }))
 
-      // Log activity
-      if (!task.completed) {
-        await logActivity({
-          actionType: 'task_complete',
-          entityType: 'task',
-          entityId: id,
-          details: { taskTitle: task.title }
-        })
-      }
+      // Log activity (completing vs reopening)
+      await logActivity({
+        actionType: task.completed ? 'task_reopen' : 'task_complete',
+        entityType: 'task',
+        entityId: id,
+        details: {
+          entityName: task.title,
+          customerName: get().customers.find((c) => c.id === task.customerId)?.name,
+        }
+      })
 
       toast.success('Task updated successfully')
     } catch (error) {
@@ -474,6 +554,8 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         throw new Error('Not authenticated')
       }
 
+      const deletedTask = get().tasks.find((task) => task.id === id)
+
       const { error } = await supabase
         .from('tasks')
         .delete()
@@ -485,6 +567,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       set((state) => ({
         tasks: state.tasks.filter((task) => task.id !== id)
       }))
+
+      // Log activity
+      await logActivity({
+        actionType: 'task_delete',
+        entityType: 'task',
+        entityId: id,
+        details: {
+          entityName: deletedTask?.title,
+          customerName: deletedTask ? get().customers.find((c) => c.id === deletedTask.customerId)?.name : undefined,
+        }
+      })
 
       toast.success('Task deleted successfully')
     } catch (error) {
@@ -523,6 +616,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
           tags: [...state.tags, newTag]
         }))
 
+        // Log activity
+        await logActivity({
+          actionType: 'tag_add',
+          entityType: 'tag',
+          entityId: newTag.id,
+          details: {
+            tagName: newTag.name,
+            customerName: get().customers.find((c) => c.id === newTag.customerId)?.name,
+          }
+        })
+
         toast.success('Tag added successfully')
       }
     } catch (error) {
@@ -540,6 +644,8 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         throw new Error('Not authenticated')
       }
 
+      const deletedTag = get().tags.find((tag) => tag.id === id)
+
       const { error } = await supabase
         .from('tags')
         .delete()
@@ -551,6 +657,17 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
       set((state) => ({
         tags: state.tags.filter((tag) => tag.id !== id)
       }))
+
+      // Log activity
+      await logActivity({
+        actionType: 'tag_delete',
+        entityType: 'tag',
+        entityId: id,
+        details: {
+          tagName: deletedTag?.name,
+          customerName: deletedTag ? get().customers.find((c) => c.id === deletedTag.customerId)?.name : undefined,
+        }
+      })
 
       toast.success('Tag deleted successfully')
     } catch (error) {
@@ -745,6 +862,8 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
         throw new Error('Not authenticated')
       }
 
+      const existingCustomer = get().customers.find((customer) => customer.id === id)
+
       const { error } = await supabase
         .from('customers')
         .update({
@@ -774,6 +893,18 @@ export const useCRMStore = create<CRMStore>((set, get) => ({
             : customer
         ),
       }))
+
+      // Log activity with field-level before/after diffs
+      const editableFields = ['name', 'email', 'phone', 'phone2', 'phone3', 'school', 'source']
+      const changes = diffObjects(existingCustomer ?? undefined, details, editableFields)
+      if (Object.keys(changes).length > 0) {
+        await logActivity({
+          actionType: 'customer_update',
+          entityType: 'customer',
+          entityId: id,
+          details: { entityName: details.name || existingCustomer?.name, changes }
+        })
+      }
 
       toast.success('Customer details updated successfully')
     } catch (error) {

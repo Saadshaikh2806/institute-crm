@@ -21,6 +21,8 @@ import { DueTasksList } from "./due-tasks-list"
 import { NotificationPermission } from "./notification-permission"
 import type { Task } from "@/types/crm"  // Add this import at the top with other imports
 import { clearBrowserSessionToken } from "@/lib/single-session"
+import { endSession } from "@/lib/session-tracker"
+import { logActivity } from "@/lib/activity-logger"
 
 export function CustomerDashboard() {
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
@@ -48,6 +50,8 @@ export function CustomerDashboard() {
   const handleSignOut = async () => {
     setIsSigningOut(true)
     try {
+      await logActivity({ actionType: 'logout' })
+      await endSession('logout')
       clearBrowserSessionToken()
       await supabase.auth.signOut()
       router.push('/login')

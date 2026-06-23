@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { LogOut, Users, Activity, BarChart3, UserPlus } from "lucide-react"
+import { LogOut, Users, Activity, BarChart3, UserPlus, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
@@ -10,6 +10,8 @@ import { toast } from "sonner"
 import { useCRMStore } from "@/store/crm-store"
 import { isInstalledPWA } from "@/lib/utils"
 import { clearBrowserSessionToken } from "@/lib/single-session"
+import { endSession } from "@/lib/session-tracker"
+import { logActivity } from "@/lib/activity-logger"
 
 interface SuperAdminHeaderProps {
     activeTab: string
@@ -37,6 +39,8 @@ export function SuperAdminHeader({ activeTab, onTabChange }: SuperAdminHeaderPro
 
     const handleSignOut = async () => {
         try {
+            await logActivity({ actionType: 'logout' })
+            await endSession('logout')
             useCRMStore.getState().clearStore()
             clearBrowserSessionToken()
 
@@ -59,6 +63,10 @@ export function SuperAdminHeader({ activeTab, onTabChange }: SuperAdminHeaderPro
                     <h1 className="text-2xl font-bold text-white">Super Admin</h1>
                     <Tabs value={activeTab} onValueChange={onTabChange} className="ml-6">
                         <TabsList className="bg-white/10">
+                            <TabsTrigger value="overview" className="text-white data-[state=active]:bg-white data-[state=active]:text-purple-600">
+                                <Wifi className="h-4 w-4 mr-2" />
+                                Overview
+                            </TabsTrigger>
                             <TabsTrigger value="users" className="text-white data-[state=active]:bg-white data-[state=active]:text-purple-600">
                                 <Users className="h-4 w-4 mr-2" />
                                 Users

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -18,7 +19,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
-import { Users, FileText, CheckCircle, Clock, Search, RefreshCw, KeyRound, Eye, EyeOff, Download } from "lucide-react"
+import { Users, FileText, CheckCircle, Clock, Search, RefreshCw, KeyRound, Eye, EyeOff, Download, Circle, ChevronRight } from "lucide-react"
 import type { UserStats } from "@/types/crm"
 import { logActivity } from "@/lib/activity-logger"
 
@@ -35,9 +36,14 @@ interface UserWithStats {
     task_count: number
     completed_task_count: number
     last_activity: string | null
+    is_online: boolean
+    actions_today: number
 }
 
+const ONLINE_WINDOW_MS = 2 * 60 * 1000
+
 export function UserOverview() {
+    const router = useRouter()
     const [users, setUsers] = useState<UserWithStats[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
@@ -83,19 +89,36 @@ export function UserOverview() {
                 .select('user_id, created_at')
                 .order('created_at', { ascending: false })
 
+            // Get recent sessions (last 24h) to compute live presence
+            const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+            const { data: sessionData } = await supabase
+                .from('user_sessions')
+                .select('user_id, last_seen_at, logout_at')
+                .gte('last_seen_at', since)
+
+            const todayStr = new Date().toDateString()
+
             // Calculate stats for each user
             const usersWithStats = usersData.map(user => {
                 const userCustomers = customerCounts?.filter(c => c.user_id === user.auth_user_id) || []
                 const userTasks = taskData?.filter(t => t.user_id === user.auth_user_id) || []
                 const completedTasks = userTasks.filter(t => t.completed)
-                const lastActivity = activityData?.find(a => a.user_id === user.auth_user_id)
+                const userActivity = activityData?.filter(a => a.user_id === user.auth_user_id) || []
+                const lastActivity = userActivity[0]
+                const actionsToday = userActivity.filter(a => new Date(a.created_at).toDateString() === todayStr).length
+                const isOnline = (sessionData || []).some(s =>
+                    s.user_id === user.auth_user_id && !s.logout_at &&
+                    Date.now() - new Date(s.last_seen_at).getTime() < ONLINE_WINDOW_MS
+                )
 
                 return {
                     ...user,
                     customer_count: userCustomers.length,
                     task_count: userTasks.length,
                     completed_task_count: completedTasks.length,
-                    last_activity: lastActivity?.created_at || null
+                    last_activity: lastActivity?.created_at || null,
+                    is_online: isOnline,
+                    actions_today: actionsToday,
                 }
             })
 
@@ -305,7 +328,9 @@ export function UserOverview() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>User</TableHead>
+                            <TableHead className="text-center">Online</TableHead>
                             <TableHead>Role</TableHead>
+                            <TableHead className="text-center">Today</TableHead>
                             <TableHead className="text-center">Customers</TableHead>
                             <TableHead className="text-center">Tasks</TableHead>
                             <TableHead className="text-center">Completed</TableHead>
@@ -317,17 +342,40 @@ export function UserOverview() {
                     </TableHeader>
                     <TableBody>
                         {filteredUsers.map((user) => (
-                            <TableRow key={user.id}>
+                            <TableRow
+                                key={user.id}
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={() => router.push(`/super-admin/users/${user.auth_user_id}`)}
+                            >
                                 <TableCell>
-                                    <div>
-                                        <div className="font-medium">{user.full_name || 'N/A'}</div>
-                                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                                    <div className="flex items-center gap-2">
+                                        <div>
+                                            <div className="font-medium flex items-center gap-1">
+                                                {user.full_name || 'N/A'}
+                                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                                        </div>
                                     </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    {user.is_online ? (
+                                        <span className="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
+                                            <Circle className="h-2 w-2 fill-green-500 text-green-500" /> Online
+                                        </span>
+                                    ) : (
+                                        <Circle className="h-2 w-2 fill-gray-300 text-gray-300 mx-auto" />
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     <Badge className={getRoleBadgeColor(user.role)}>
                                         {user.role}
                                     </Badge>
+                                </TableCell>
+                                <TableCell className="text-center font-medium">
+                                    {user.actions_today > 0
+                                        ? <span className="text-purple-600">{user.actions_today}</span>
+                                        : <span className="text-muted-foreground">0</span>}
                                 </TableCell>
                                 <TableCell className="text-center font-medium">{user.customer_count}</TableCell>
                                 <TableCell className="text-center font-medium">{user.task_count}</TableCell>
@@ -345,13 +393,13 @@ export function UserOverview() {
                                         ? new Date(user.last_activity).toLocaleString()
                                         : 'No activity'}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell onClick={(e) => e.stopPropagation()}>
                                     <Switch
                                         checked={user.is_active}
                                         onCheckedChange={() => toggleUserStatus(user.id, user.is_active, user.email)}
                                     />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center gap-2">
                                         <Button
                                             variant="ghost"

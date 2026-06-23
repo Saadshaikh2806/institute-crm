@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { Session, createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Loader2 } from "lucide-react"
 import { clearBrowserSessionToken, getBrowserSessionToken } from "@/lib/single-session"
+import { useActivityHeartbeat } from "@/hooks/use-activity-heartbeat"
 
 interface AuthContextType {
   session: Session | null
@@ -25,6 +26,9 @@ export function AuthProvider({
   const [session, setSession] = useState<Session | null>(initialSession)
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClientComponentClient()
+
+  // Keep the current user's work session alive (heartbeat + presence) while logged in.
+  useActivityHeartbeat(!!session?.user?.id)
 
   useEffect(() => {
     const {

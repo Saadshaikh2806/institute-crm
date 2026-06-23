@@ -9,7 +9,8 @@ import {
     TrendingUp,
     Users,
     Activity,
-    Calendar
+    Calendar,
+    Clock
 } from "lucide-react"
 
 interface DailyActivity {
@@ -31,6 +32,7 @@ export function ActivityAnalytics() {
     const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([])
     const [topUsers, setTopUsers] = useState<UserActivity[]>([])
     const [actionBreakdown, setActionBreakdown] = useState<ActionBreakdown[]>([])
+    const [hourlyActivity, setHourlyActivity] = useState<number[]>(new Array(24).fill(0))
     const [isLoading, setIsLoading] = useState(true)
     const [totalActivities, setTotalActivities] = useState(0)
     const [weeklyGrowth, setWeeklyGrowth] = useState(0)
@@ -113,6 +115,13 @@ export function ActivityAnalytics() {
                 .sort((a, b) => b.count - a.count)
             setActionBreakdown(actionList)
 
+            // Calculate hourly distribution (peak working hours)
+            const hours = new Array(24).fill(0)
+            logs.forEach(log => {
+                hours[new Date(log.created_at).getHours()]++
+            })
+            setHourlyActivity(hours)
+
         } catch (error) {
             console.error('Error fetching analytics:', error)
             toast.error("Failed to fetch analytics")
@@ -124,6 +133,8 @@ export function ActivityAnalytics() {
     const maxDailyCount = Math.max(...dailyActivity.map(d => d.count), 1)
     const maxUserCount = Math.max(...topUsers.map(u => u.count), 1)
     const maxActionCount = Math.max(...actionBreakdown.map(a => a.count), 1)
+    const maxHourly = Math.max(...hourlyActivity, 1)
+    const peakHour = hourlyActivity.indexOf(maxHourly)
 
     if (isLoading) {
         return (
@@ -236,6 +247,34 @@ export function ActivityAnalytics() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Peak Hours */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Clock className="h-5 w-5" />
+                        Peak Activity Hours
+                        {totalActivities > 0 && (
+                            <span className="text-sm font-normal text-muted-foreground ml-2">
+                                Busiest at {peakHour}:00–{peakHour + 1}:00
+                            </span>
+                        )}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-end gap-1 h-40">
+                        {hourlyActivity.map((count, hour) => (
+                            <div key={hour} className="flex-1 flex flex-col items-center justify-end h-full" title={`${hour}:00 — ${count} actions`}>
+                                <div
+                                    className={`w-full rounded-t transition-all ${hour === peakHour && count > 0 ? 'bg-purple-600' : 'bg-purple-300'}`}
+                                    style={{ height: `${Math.max((count / maxHourly) * 100, count > 0 ? 4 : 0)}%` }}
+                                />
+                                <span className="text-[9px] text-muted-foreground mt-1">{hour % 2 === 0 ? hour : ""}</span>
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Action Breakdown */}
             <Card>
