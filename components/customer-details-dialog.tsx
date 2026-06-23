@@ -458,6 +458,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, customerId }: Custom
                     <SelectItem value="cold">Cold</SelectItem>
                     <SelectItem value="admission_done">Admission Done</SelectItem>
                     <SelectItem value="career_counselling_done">Career Counselling Done</SelectItem>
+                    <SelectItem value="walk_in_done">Walk In Done</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
